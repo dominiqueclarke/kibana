@@ -105,7 +105,6 @@ export const getSeriesAndDomain = (items: NetworkItems) => {
   // let metaData;
 
   const series = items.reduce<WaterfallData>((acc, item, index) => {
-    console.log(item.certificates);
     if (!item.timings) {
       acc.push({
         x: index,
