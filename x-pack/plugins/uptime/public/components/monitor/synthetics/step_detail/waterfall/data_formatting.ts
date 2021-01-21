@@ -9,16 +9,18 @@ import { euiPaletteColorBlind } from '@elastic/eui';
 import {
   NetworkItems,
   NetworkItem,
+  FriendlyFlyoutLabels,
   FriendlyTimingLabels,
   FriendlyMimetypeLabels,
   MimeType,
   MimeTypesMap,
   Timings,
+  MetaData,
   TIMING_ORDER,
   SidebarItems,
   LegendItems,
 } from './types';
-import { WaterfallData } from '../../waterfall';
+import { WaterfallData, WaterfallMetaData } from '../../waterfall';
 import { NetworkEvent } from '../../../../../../common/runtime_types';
 
 export const extractItems = (data: NetworkEvent[]): NetworkItems => {
@@ -30,6 +32,9 @@ export const extractItems = (data: NetworkEvent[]): NetworkItems => {
 };
 
 const formatValueForDisplay = (value: number, points: number = 3) => {
+  if (value === undefined) {
+    return '--';
+  }
   return Number(value).toFixed(points);
 };
 
@@ -55,11 +60,31 @@ const getFriendlyTooltipValue = ({
   return `${label}: ${formatValueForDisplay(value)}ms`;
 };
 
-export const getSeriesAndDomain = (items: NetworkItems) => {
-  const getValueForOffset = (item: NetworkItem) => {
-    return item.requestSentTime;
-  };
+const getFriendlyMetaDataValue = ({ value, postFix }: { value?: number; postFix?: string }) => {
+  if (value === undefined || value < 0) {
+    return '--';
+  }
 
+  let formattedValue = formatValueForDisplay(value);
+
+  if (postFix) {
+    formattedValue = `${formattedValue}${postFix}`;
+  }
+
+  return formattedValue;
+};
+
+const getValueForOffset = (item: NetworkItem): number => {
+  return item.requestSentTime;
+};
+
+const getCurrentOffset = (item: NetworkItem, zeroOffset: number): number => {
+  const offsetValue = getValueForOffset(item);
+
+  return offsetValue - zeroOffset;
+};
+
+export const getSeriesAndDomain = (items: NetworkItems) => {
   // The earliest point in time a request is sent or started. This will become our notion of "0".
   const zeroOffset = items.reduce<number>((acc, item) => {
     const offsetValue = getValueForOffset(item);
@@ -76,8 +101,11 @@ export const getSeriesAndDomain = (items: NetworkItems) => {
       return timings[timing];
     }
   };
+  // let series;
+  // let metaData;
 
   const series = items.reduce<WaterfallData>((acc, item, index) => {
+    console.log(item.certificates);
     if (!item.timings) {
       acc.push({
         x: index,
@@ -90,10 +118,9 @@ export const getSeriesAndDomain = (items: NetworkItems) => {
       return acc;
     }
 
-    const offsetValue = getValueForOffset(item);
     const mimeTypeColour = getColourForMimeType(item.mimeType);
 
-    let currentOffset = offsetValue - zeroOffset;
+    let currentOffset = getCurrentOffset(item, zeroOffset);
 
     TIMING_ORDER.forEach((timing) => {
       const value = getValue(item.timings, timing);
@@ -106,6 +133,7 @@ export const getSeriesAndDomain = (items: NetworkItems) => {
           y0: currentOffset,
           y,
           config: {
+            id: index,
             colour,
             showTooltip: true,
             tooltipProps: {
@@ -150,10 +178,73 @@ export const getSeriesAndDomain = (items: NetworkItems) => {
     }
     return acc;
   }, []);
+  const metaData = {};
+
+  // const metaData = items.reduce<WaterfallMetaData>((acc, item, index) => {
+  //   return formatMetaData(item, index, requestStart: currentOffset)
+  // }, []);
 
   const yValues = series.map((serie) => serie.y);
   const domain = { min: 0, max: Math.max(...yValues) };
-  return { series, domain };
+  return { series, domain, metaData };
+};
+
+const formatHeaders = (headers: Record<string, unknown>) => {
+  return Object.keys(headers).map((key) => ({
+    name: key,
+    value: `${headers[key]}`,
+  }));
+};
+
+const formatMetaData = (item: NetworkItem, index: number, requestStart: number) => {
+  const { bytesDownloaded, mimeType, url, requestHeaders, responseHeaders } = item;
+  const { dns, connect, ssl, wait, receive, total } = item.timings || {};
+  const contentDownloaded = receive && receive > 0 ? receive : total;
+  return {
+    x: index,
+    url,
+    requestHeaders: requestHeaders ? formatHeaders(requestHeaders) : undefined,
+    responseHeaders: responseHeaders ? formatHeaders(responseHeaders) : undefined,
+    config: [
+      { name: FriendlyFlyoutLabels[MetaData.MimeType], value: mimeType || '--' },
+      {
+        name: FriendlyFlyoutLabels[MetaData.RequestStart],
+        value: getFriendlyMetaDataValue({ value: requestStart, postFix: 'ms' }),
+      },
+      {
+        name: FriendlyFlyoutLabels[Timings.Dns],
+        value: getFriendlyMetaDataValue({ value: dns, postFix: 'ms' }),
+      },
+      {
+        name: FriendlyFlyoutLabels[Timings.Connect],
+        value: getFriendlyMetaDataValue({ value: connect, postFix: 'ms' }),
+      },
+      {
+        name: FriendlyFlyoutLabels[Timings.Ssl],
+        value: getFriendlyMetaDataValue({ value: ssl, postFix: 'ms' }),
+      },
+      {
+        name: FriendlyFlyoutLabels[Timings.Wait],
+        value: getFriendlyMetaDataValue({ value: wait, postFix: 'ms' }),
+      },
+      {
+        name: FriendlyFlyoutLabels[Timings.Receive],
+        value: getFriendlyMetaDataValue({
+          value: contentDownloaded,
+          postFix: 'ms',
+        }),
+      },
+      {
+        name: FriendlyFlyoutLabels[MetaData.BytesDownloaded],
+        value: getFriendlyMetaDataValue({
+          value: bytesDownloaded ? bytesDownloaded / 1000 : undefined,
+          postFix: ' KB',
+        }),
+      },
+      { name: 'Decompressed', value: '--' },
+      { name: 'Certificates', value: '--' },
+    ],
+  };
 };
 
 export const getSidebarItems = (items: NetworkItems): SidebarItems => {

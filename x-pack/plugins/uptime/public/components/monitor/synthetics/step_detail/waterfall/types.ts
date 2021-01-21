@@ -17,6 +17,13 @@ export enum Timings {
   Receive = 'receive',
 }
 
+export enum MetaData {
+  BytesDownloaded = 'bytesDownloaded',
+  Certificates = 'certificates',
+  MimeType = 'mimeType',
+  RequestStart = 'requestStart',
+}
+
 export const FriendlyTimingLabels = {
   [Timings.Blocked]: i18n.translate(
     'xpack.uptime.synthetics.waterfallChart.labels.timings.blocked',
@@ -50,12 +57,63 @@ export const FriendlyTimingLabels = {
   ),
 };
 
+export const FriendlyFlyoutLabels = {
+  [MetaData.MimeType]: i18n.translate(
+    'xpack.uptime.synthetics.waterfallChart.labels.metaData.contentType',
+    {
+      defaultMessage: 'Content Type',
+    }
+  ),
+  [MetaData.RequestStart]: i18n.translate(
+    'xpack.uptime.synthetics.waterfallChart.labels.metaData.requestStart',
+    {
+      defaultMessage: 'Request Start',
+    }
+  ),
+  [Timings.Dns]: i18n.translate('xpack.uptime.synthetics.waterfallChart.labels.metaData.dns', {
+    defaultMessage: 'DNS Lookup',
+  }),
+  [Timings.Connect]: i18n.translate(
+    'xpack.uptime.synthetics.waterfallChart.labels.metaData.connect',
+    {
+      defaultMessage: 'Initial Connection',
+    }
+  ),
+  [Timings.Ssl]: i18n.translate('xpack.uptime.synthetics.waterfallChart.labels.metaData.ssl', {
+    defaultMessage: 'SSL Negotation',
+  }),
+  [Timings.Wait]: i18n.translate('xpack.uptime.synthetics.waterfallChart.labels.metaData.wait', {
+    defaultMessage: 'Time to First Byte',
+  }),
+  [Timings.Receive]: i18n.translate(
+    'xpack.uptime.synthetics.waterfallChart.labels.metaData.receive',
+    {
+      defaultMessage: 'Content downloaded',
+    }
+  ),
+  [MetaData.BytesDownloaded]: i18n.translate(
+    'xpack.uptime.synthetics.waterfallChart.labels.metaData.receive',
+    {
+      defaultMessage: 'Bytes Downloaded',
+    }
+  ),
+};
+
 export const TIMING_ORDER = [
   Timings.Blocked,
   Timings.Dns,
   Timings.Connect,
   Timings.Ssl,
   Timings.Send,
+  Timings.Wait,
+  Timings.Receive,
+] as const;
+
+export const META_DATA_ORDER_FLYOUT = [
+  MetaData.MimeType,
+  Timings.Dns,
+  Timings.Connect,
+  Timings.Ssl,
   Timings.Wait,
   Timings.Receive,
 ] as const;

@@ -4,7 +4,7 @@
  * you may not use this file except in compliance with the Elastic License.
  */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
 import {
   Axis,
@@ -18,6 +18,10 @@ import {
   BarStyleAccessor,
   TooltipInfo,
   TooltipType,
+  ElementClickListener,
+  ProjectionClickListener,
+  ProjectedValues,
+  XYChartElementEvent,
 } from '@elastic/charts';
 import { EUI_CHARTS_THEME_DARK, EUI_CHARTS_THEME_LIGHT } from '@elastic/eui/dist/eui_charts_theme';
 // NOTE: The WaterfallChart has a hard requirement that consumers / solutions are making use of KibanaReactContext, and useKibana etc
@@ -32,11 +36,12 @@ import {
   WaterfallChartChartContainer,
   WaterfallChartTooltip,
 } from './styles';
-import { WaterfallData } from '../types';
+import { WaterfallData, WaterfallMetaDataEntry } from '../types';
 import { BAR_HEIGHT, CANVAS_MAX_ITEMS, MAIN_GROW_SIZE, SIDEBAR_GROW_SIZE } from './constants';
 import { Sidebar } from './sidebar';
 import { Legend } from './legend';
 import { useBarCharts } from './use_bar_charts';
+import { WaterfallFlyout } from './waterfall_flyout';
 
 const Tooltip = (tooltipInfo: TooltipInfo) => {
   const { data, renderTooltipItem } = useWaterfallContext();
@@ -84,7 +89,44 @@ export const WaterfallChart = ({
   maxHeight = '800px',
   fullHeight = false,
 }: WaterfallChartProps) => {
-  const { data, sidebarItems, legendItems } = useWaterfallContext();
+  const { data, metaData, sidebarItems, legendItems } = useWaterfallContext();
+  const [isFlyoutVisible, setIsFlyoutVisible] = useState(false);
+  const [flyoutData, setFlyoutData] = useState<WaterfallMetaDataEntry>({
+    x: 0,
+    url: '',
+    config: [],
+  });
+
+  const handleFlyout = useCallback(
+    (flyoutEntry: WaterfallMetaDataEntry) => {
+      setIsFlyoutVisible(false);
+      setFlyoutData(flyoutEntry);
+      setIsFlyoutVisible(true);
+    },
+    [setIsFlyoutVisible, setFlyoutData]
+  );
+
+  const handleBarClick: ElementClickListener = useCallback(
+    ([elementData]) => {
+      setIsFlyoutVisible(false);
+      const { datum } = (elementData as XYChartElementEvent)[0];
+      const metaDataEntry = metaData[datum.config.id];
+      handleFlyout(metaDataEntry);
+    },
+    [metaData, handleFlyout]
+  );
+
+  const handleProjectionClick: ProjectionClickListener = useCallback(
+    (projectionData) => {
+      setIsFlyoutVisible(false);
+      const { x } = projectionData as ProjectedValues;
+      if (typeof x === 'number' && x >= 0) {
+        const metaDataEntry = metaData[x];
+        handleFlyout(metaDataEntry);
+      }
+    },
+    [metaData, handleFlyout]
+  );
 
   const [darkMode] = useUiSetting$<boolean>('theme:darkMode');
 
@@ -176,6 +218,8 @@ export const WaterfallChart = ({
                     rotation={90}
                     tooltip={{ customTooltip: Tooltip }}
                     theme={theme}
+                    onElementClick={handleBarClick}
+                    onProjectionClick={handleProjectionClick}
                   />
 
                   <Axis
@@ -207,6 +251,11 @@ export const WaterfallChart = ({
           </EuiFlexItem>
         </EuiFlexGroup>
         {shouldRenderLegend && <Legend items={legendItems!} render={renderLegendItem!} />}
+        <WaterfallFlyout
+          isFlyoutVisible={isFlyoutVisible}
+          setIsFlyoutVisible={setIsFlyoutVisible}
+          data={flyoutData}
+        />
       </>
     </WaterfallChartOuterContainer>
   );

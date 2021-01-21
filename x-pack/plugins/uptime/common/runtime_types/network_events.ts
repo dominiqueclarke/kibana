@@ -26,13 +26,17 @@ const NetworkEventType = t.intersection([
     timestamp: t.string,
     requestSentTime: t.number,
     loadEndTime: t.number,
+    url: t.string,
   }),
   t.partial({
+    certificates: t.string,
+    bytesDownloaded: t.number,
     method: t.string,
-    url: t.string,
     status: t.number,
     mimeType: t.string,
     requestStartTime: t.number,
+    responseHeaders: t.record(t.string, t.string),
+    requestHeaders: t.record(t.string, t.string),
     timings: NetworkTimingsType,
   }),
 ]);

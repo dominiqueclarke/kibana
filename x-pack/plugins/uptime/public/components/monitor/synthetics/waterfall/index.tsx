@@ -7,4 +7,9 @@
 export { WaterfallChart, RenderItem, WaterfallChartProps } from './components/waterfall_chart';
 export { WaterfallProvider, useWaterfallContext } from './context/waterfall_chart';
 export { MiddleTruncatedText } from './components/middle_truncated_text';
-export { WaterfallData, WaterfallDataEntry } from './types';
+export {
+  WaterfallData,
+  WaterfallDataEntry,
+  WaterfallMetaData,
+  WaterfallMetaDataEntry,
+} from './types';

@@ -54,6 +54,10 @@ export const getNetworkEvents: UMElasticsearchQueryFn<
       requestStartTime,
       loadEndTime,
       timings: event._source.synthetics.payload.timings,
+      bytesDownloaded: event._source.synthetics.payload.response?.encoded_data_length,
+      certificates: event._source.synthetics.payload.response?.security_details,
+      requestHeaders: event._source.synthetics.payload.request?.headers,
+      responseHeaders: event._source.synthetics.payload.response?.headers,
     };
   });
 };
