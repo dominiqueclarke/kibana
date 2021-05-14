@@ -455,7 +455,7 @@ export function SyntheticsIntegrationPageProvider({
       await this.configureProxyUrl(proxyUrl);
       await this.fillTextInputByTestSubj('syntheticsTCPRequestSendCheck', requestSendCheck);
       await this.fillTextInputByTestSubj('syntheticsTCPResponseReceiveCheck', responseReceiveCheck);
-      if (!proxyUseLocalResolver) {
+      if (proxyUseLocalResolver) {
         const field = await testSubjects.find('syntheticsUseLocalResolver');
         const label = await field.findByCssSelector('label');
         label.click();

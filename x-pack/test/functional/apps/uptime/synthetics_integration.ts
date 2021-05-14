@@ -11,9 +11,9 @@ import { FtrProviderContext } from '../../ftr_provider_context';
 export default function ({ getPageObjects, getService }: FtrProviderContext) {
   const monitorName = 'Sample Synthetics integration';
 
-  const { syntheticsIntegration } = getPageObjects(['syntheticsIntegration']);
+  const uptimePage = getPageObjects(['syntheticsIntegration']);
   const testSubjects = getService('testSubjects');
-  const { syntheticsPackage: syntheticsPackageService } = getService('uptime');
+  const uptimeService = getService('uptime');
 
   /* eslint-disable ban/ban */
   describe.only('When on the Synthetics Integration Policy Create Page', function () {
@@ -26,8 +26,8 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
 
     describe('displays custom UI', () => {
       before(async () => {
-        const version = await syntheticsPackageService.getSyntheticsPackageVersion();
-        await syntheticsIntegration.navigateToPackagePage(version!);
+        const version = await uptimeService.syntheticsPackage.getSyntheticsPackageVersion();
+        await uptimePage.syntheticsIntegration.navigateToPackagePage(version!);
       });
 
       it('should display policy view', async () => {
@@ -35,7 +35,7 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
       });
 
       it('prevent saving when integration name, url/host, or schedule is missing', async () => {
-        const saveButton = await syntheticsIntegration.findSaveButton();
+        const saveButton = await uptimePage.syntheticsIntegration.findSaveButton();
         await saveButton.click();
 
         await testSubjects.missingOrFail('packagePolicyCreateSuccessToast');
@@ -45,17 +45,17 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
     describe('create new policy', () => {
       let version: string;
       before(async () => {
-        await syntheticsPackageService.deletePolicyByName('system-1');
+        await uptimeService.syntheticsPackage.deletePolicyByName('system-1');
       });
 
       beforeEach(async () => {
-        version = (await syntheticsPackageService.getSyntheticsPackageVersion())!;
-        await syntheticsIntegration.navigateToPackagePage(version!);
-        await syntheticsPackageService.deletePolicyByName(monitorName);
+        version = (await uptimeService.syntheticsPackage.getSyntheticsPackageVersion())!;
+        await uptimePage.syntheticsIntegration.navigateToPackagePage(version!);
+        await uptimeService.syntheticsPackage.deletePolicyByName(monitorName);
       });
 
       afterEach(async () => {
-        await syntheticsPackageService.deletePolicyByName(monitorName);
+        await uptimeService.syntheticsPackage.deletePolicyByName(monitorName);
       });
 
       it('allows saving when user enters a valid integration name and url/host', async () => {
@@ -65,14 +65,16 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           url: 'http://elastic.co',
         };
-        await syntheticsIntegration.createBasicHTTPMonitorDetails(config);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.createBasicHTTPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -138,15 +140,17 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           url: 'http://elastic.co',
         };
-        await syntheticsIntegration.createBasicHTTPMonitorDetails(config);
-        await syntheticsIntegration.enableTLS();
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.createBasicHTTPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.enableTLS();
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -221,15 +225,17 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           certKey: 'certKey',
           certKeyPassphrase: 'certKeyPassphrase',
         };
-        await syntheticsIntegration.createBasicHTTPMonitorDetails(config);
-        await syntheticsIntegration.configureTLSOptions(tlsConfig);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.createBasicHTTPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.configureTLSOptions(tlsConfig);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -301,7 +307,7 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           url: 'http://elastic.co',
         };
-        await syntheticsIntegration.createBasicHTTPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.createBasicHTTPMonitorDetails(config);
         const advancedConfig = {
           username: 'username',
           password: 'password',
@@ -325,14 +331,16 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           indexResponseBody: false,
           indexResponseHeaders: false,
         };
-        await syntheticsIntegration.configureHTTPAdvancedOptions(advancedConfig);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.configureHTTPAdvancedOptions(advancedConfig);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -410,14 +418,16 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           host: 'smtp.gmail.com:587',
         };
-        await syntheticsIntegration.createBasicTCPMonitorDetails(config);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.createBasicTCPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -480,21 +490,23 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           host: 'smtp.gmail.com:587',
         };
-        await syntheticsIntegration.createBasicTCPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.createBasicTCPMonitorDetails(config);
         const advancedConfig = {
           proxyUrl: 'proxyUrl',
           requestSendCheck: 'body',
           responseReceiveCheck: 'success',
-          proxyUseLocalResolver: false,
+          proxyUseLocalResolver: true,
         };
-        await syntheticsIntegration.configureTCPAdvancedOptions(advancedConfig);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.configureTCPAdvancedOptions(advancedConfig);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
@@ -560,14 +572,16 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
           ...basicConfig,
           host: '1.1.1.1',
         };
-        await syntheticsIntegration.createBasicICMPMonitorDetails(config);
-        await syntheticsIntegration.confirmAndSave();
+        await uptimePage.syntheticsIntegration.createBasicICMPMonitorDetails(config);
+        await uptimePage.syntheticsIntegration.confirmAndSave();
 
         await testSubjects.existOrFail('packagePolicyCreateSuccessToast');
 
-        const [agentPolicy] = await syntheticsPackageService.getAgentPolicyList();
+        const [agentPolicy] = await uptimeService.syntheticsPackage.getAgentPolicyList();
         const agentPolicyId = agentPolicy.id;
-        const agentFullPolicy = await syntheticsPackageService.getFullAgentPolicy(agentPolicyId);
+        const agentFullPolicy = await uptimeService.syntheticsPackage.getFullAgentPolicy(
+          agentPolicyId
+        );
 
         expect(agentFullPolicy.inputs).to.eql([
           {
