@@ -15,7 +15,8 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
   const testSubjects = getService('testSubjects');
   const { syntheticsPackage: syntheticsPackageService } = getService('uptime');
 
-  describe('When on the Synthetics Integration Policy Create Page', function () {
+  /* eslint-disable ban/ban */
+  describe.only('When on the Synthetics Integration Policy Create Page', function () {
     this.tags(['ciGroup6']);
     const basicConfig = {
       name: monitorName,
@@ -623,4 +624,5 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
       });
     });
   });
+  /* eslint-enable ban/ban */
 }

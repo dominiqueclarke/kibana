@@ -48,7 +48,8 @@ export default ({ loadTestFile, getService }: FtrProviderContext) => {
       await deleteUptimeSettingsObject(server);
     });
 
-    describe('with generated data', () => {
+    /* eslint-disable ban/ban */
+    describe.only('with generated data', () => {
       beforeEach('load heartbeat data', async () => {
         await esArchiver.load('uptime/blank');
       });
@@ -61,6 +62,7 @@ export default ({ loadTestFile, getService }: FtrProviderContext) => {
       loadTestFile(require.resolve('./certificates'));
       loadTestFile(require.resolve('./synthetics_integration'));
     });
+    /* eslint-enable ban/ban */
 
     describe('with generated data but no data reset', () => {
       loadTestFile(require.resolve('./ping_redirects'));
