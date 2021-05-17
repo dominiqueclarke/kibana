@@ -74,7 +74,8 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
     use_output: 'default',
   });
 
-  describe('When on the Synthetics Integration Policy Create Page', function () {
+  /* eslint-disable ban/ban */
+  describe.only('When on the Synthetics Integration Policy Create Page', function () {
     this.tags(['ciGroup6']);
     const basicConfig = {
       name: monitorName,
@@ -439,4 +440,5 @@ export default function ({ getPageObjects, getService }: FtrProviderContext) {
       });
     });
   });
+  /* eslint-enable ban/ban */
 }
