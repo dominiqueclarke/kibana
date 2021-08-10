@@ -8,6 +8,8 @@
 import * as t from 'io-ts';
 import React from 'react';
 import { alertWorkflowStatusRt } from '../../common/typings';
+import { Redirect } from 'react-router-dom';
+import { alertStatusRt } from '../../common/typings';
 import { ExploratoryViewPage } from '../components/shared/exploratory_view';
 import { AlertsPage } from '../pages/alerts';
 import { AllCasesPage } from '../pages/cases/all_cases';
@@ -99,7 +101,20 @@ export const routes = {
       }),
     },
   },
-  '/exploratory-view': {
+  '/exploratory-view/': {
+    handler: () => {
+      return <Redirect to="//exploratory-view/configure" />;
+    },
+    params: {
+      query: t.partial({
+        rangeFrom: t.string,
+        rangeTo: t.string,
+        refreshPaused: jsonRt.pipe(t.boolean),
+        refreshInterval: jsonRt.pipe(t.number),
+      }),
+    },
+  },
+  '/exploratory-view/:mode': {
     handler: () => {
       return <ExploratoryViewPage />;
     },
@@ -112,18 +127,4 @@ export const routes = {
       }),
     },
   },
-  // enable this to test multi series architecture
-  // '/exploratory-view/multi': {
-  //   handler: () => {
-  //     return <ExploratoryViewPage multiSeries={true} />;
-  //   },
-  //   params: {
-  //     query: t.partial({
-  //       rangeFrom: t.string,
-  //       rangeTo: t.string,
-  //       refreshPaused: jsonRt.pipe(t.boolean),
-  //       refreshInterval: jsonRt.pipe(t.number),
-  //     }),
-  //   },
-  // },
 };
