@@ -7,7 +7,10 @@
 
 import * as t from 'io-ts';
 import React from 'react';
+<<<<<<< HEAD
 import { alertWorkflowStatusRt } from '../../common/typings';
+=======
+>>>>>>> [Observability] [Exploratory View] Create multi series feature branch (#108079)
 import { Redirect } from 'react-router-dom';
 import { alertStatusRt } from '../../common/typings';
 import { ExploratoryViewPage } from '../components/shared/exploratory_view';

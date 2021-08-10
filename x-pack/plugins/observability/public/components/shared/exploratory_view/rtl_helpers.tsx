@@ -39,7 +39,6 @@ import {
   IndexPatternsContract,
 } from '../../../../../../../src/plugins/data/common/index_patterns/index_patterns';
 import { createStubIndexPattern } from '../../../../../../../src/plugins/data/common/stubs';
-import { AppDataType, UrlFilter } from './types';
 import { AppDataType, SeriesUrl, UrlFilter } from './types';
 import { dataPluginMock } from '../../../../../../../src/plugins/data/public/mocks';
 import { ListItem } from '../../../hooks/use_values_list';
