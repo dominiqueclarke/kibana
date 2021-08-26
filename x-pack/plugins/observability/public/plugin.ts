@@ -24,10 +24,7 @@ import type {
   DataPublicPluginSetup,
   DataPublicPluginStart,
 } from '../../../../src/plugins/data/public';
-<<<<<<< HEAD
 import type { EmbeddableStart } from '../../../../src/plugins/embeddable/public';
-=======
->>>>>>> [Observability] [Exploratory View] Create multi series feature branch (#108079)
 import type { DiscoverStart } from '../../../../src/plugins/discover/public';
 import type {
   HomePublicPluginSetup,
