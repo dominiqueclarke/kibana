@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   SLO_MODEL_VERSION,
   SLO_SUMMARY_TEMP_INDEX_NAME,
+  SLO_SUMMARY_DESTINATION_INDEX_NAME,
+  SLO_DESTINATION_INDEX_NAME,
   getSLOPipelineId,
   getSLOSummaryPipelineId,
   getSLOSummaryTransformId,
@@ -124,6 +126,12 @@ export class CreateSLO {
       throw new SLOIdConflict(`SLO [${slo.id}] already exists`);
     }
   }
+
+  async createIndices() {
+    await this.esClient.createIndex(SLO_DESTINATION_INDEX_NAME);
+    await this.esClient.createIndex(SLO_SUMMARY_DESTINATION_INDEX_NAME);
+  }
+
   async createTempSummaryDocument(slo: SLODefinition) {
     return await retryTransientEsErrors(
       () =>
