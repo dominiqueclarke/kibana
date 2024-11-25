@@ -151,16 +151,13 @@ export class CreateSLO {
 
   async createPipeline(params: IngestPutPipelineRequest) {
     return await retryTransientEsErrors(
-      () => this.scopedClusterClient.asSecondaryAuthUser.ingest.putPipeline(params),
+      () => this.scopedClusterClient.asInternalUser.ingest.putPipeline(params),
       { logger: this.logger }
     );
   }
 
   async deletePipeline(id: string) {
-    return this.scopedClusterClient.asSecondaryAuthUser.ingest.deletePipeline(
-      { id },
-      { ignore: [404] }
-    );
+    return this.scopedClusterClient.asInternalUser.ingest.deletePipeline({ id }, { ignore: [404] });
   }
 
   public async inspect(params: CreateSLOParams): Promise<{
