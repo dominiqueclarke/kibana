@@ -54,7 +54,7 @@ export const SUPPRESSED_PRIORITY_ACTION = {
 };
 
 export const SLO_MODEL_VERSION = 2;
-export const SLO_RESOURCES_VERSION = 3.3;
+export const SLO_RESOURCES_VERSION = 3.4;
 export const SLO_RESOURCES_VERSION_MAJOR = 3;
 
 export const SLO_COMPONENT_TEMPLATE_MAPPINGS_NAME = '.slo-observability.sli-mappings';
@@ -66,7 +66,11 @@ export const SLO_INDEX_TEMPLATE_PATTERN = `.slo-observability.sli-*`;
 export const SLO_DESTINATION_INDEX_NAME = `.slo-observability.sli-v${SLO_RESOURCES_VERSION}`;
 export const SLO_DESTINATION_INDEX_PATTERN = `.slo-observability.sli-v${SLO_RESOURCES_VERSION_MAJOR}*`;
 
+export const SLO_DESTINATION_INITIAL_ROLLOVER_INDEX_NAME = `${SLO_DESTINATION_INDEX_NAME}-000001`;
+
 export const SLO_INGEST_PIPELINE_INDEX_NAME_PREFIX = `.slo-observability.sli-v${SLO_RESOURCES_VERSION}.`;
+
+export const SLO_LIFECYCLE_POLICY_NAME = 'slo-observability.sli-lifecycle-policy';
 
 export const SLO_SUMMARY_COMPONENT_TEMPLATE_MAPPINGS_NAME = '.slo-observability.summary-mappings';
 export const SLO_SUMMARY_COMPONENT_TEMPLATE_SETTINGS_NAME = '.slo-observability.summary-settings';

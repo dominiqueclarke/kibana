@@ -13,8 +13,6 @@ import { v4 as uuidv4 } from 'uuid';
 import {
   SLO_MODEL_VERSION,
   SLO_SUMMARY_TEMP_INDEX_NAME,
-  SLO_SUMMARY_DESTINATION_INDEX_NAME,
-  SLO_DESTINATION_INDEX_NAME,
   getSLOPipelineId,
   getSLOSummaryPipelineId,
   getSLOSummaryTransformId,
@@ -52,7 +50,7 @@ export class CreateSLO {
     await assertExpectedIndicatorSourceIndexPrivileges(slo, this.esClient);
 
     const rollbackOperations = [];
-    const createPromise = this.repository.create(slo);
+    const createSloPromise = this.repository.create(slo);
     rollbackOperations.push(() => this.repository.deleteById(slo.id, true));
 
     const rollupTransformId = getSLOTransformId(slo.id, slo.revision);
@@ -80,7 +78,7 @@ export class CreateSLO {
       rollbackOperations.push(() => this.deleteTempSummaryDocument(slo));
 
       await Promise.all([
-        createPromise,
+        createSloPromise,
         sloPipelinePromise,
         rollupTransformPromise,
         summaryPipelinePromise,
@@ -125,11 +123,6 @@ export class CreateSLO {
     if (exists) {
       throw new SLOIdConflict(`SLO [${slo.id}] already exists`);
     }
-  }
-
-  async createIndices() {
-    await this.esClient.createIndex(SLO_DESTINATION_INDEX_NAME);
-    await this.esClient.createIndex(SLO_SUMMARY_DESTINATION_INDEX_NAME);
   }
 
   async createTempSummaryDocument(slo: SLODefinition) {

@@ -5,14 +5,26 @@
  * 2.0.
  */
 
-import { SLO_RESOURCES_VERSION } from '../../../common/constants';
+import { SLO_RESOURCES_VERSION, SLO_DESTINATION_INDEX_NAME } from '../../../common/constants';
 
-export const getSLOSettingsTemplate = (name: string) => ({
+export const getSLOSettingsTemplate = ({
+  name,
+  lifecyclePolicyName,
+}: {
+  name: string;
+  lifecyclePolicyName: string;
+}) => ({
   name,
   template: {
     settings: {
       auto_expand_replicas: '0-1',
       hidden: true,
+      index: {
+        lifecycle: {
+          name: lifecyclePolicyName,
+          rollover_alias: SLO_DESTINATION_INDEX_NAME,
+        },
+      },
     },
   },
   _meta: {

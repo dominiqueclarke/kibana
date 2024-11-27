@@ -8,16 +8,20 @@
 import type {
   ClusterPutComponentTemplateRequest,
   IndicesPutIndexTemplateRequest,
+  IlmPutLifecycleRequest,
+  IndicesCreateRequest,
 } from '@elastic/elasticsearch/lib/api/types';
 import type { ElasticsearchClient, Logger } from '@kbn/core/server';
 import { getSLOMappingsTemplate } from '../assets/component_templates/slo_mappings_template';
 import { getSLOSettingsTemplate } from '../assets/component_templates/slo_settings_template';
 import { getSLOSummaryMappingsTemplate } from '../assets/component_templates/slo_summary_mappings_template';
 import { getSLOSummarySettingsTemplate } from '../assets/component_templates/slo_summary_settings_template';
+import { getSLOIndexLifecyclePolicy } from '../assets/ilm_policies/slo_ilm_policy';
 import {
   SLO_COMPONENT_TEMPLATE_MAPPINGS_NAME,
   SLO_COMPONENT_TEMPLATE_SETTINGS_NAME,
   SLO_DESTINATION_INDEX_NAME,
+  SLO_DESTINATION_INITIAL_ROLLOVER_INDEX_NAME,
   SLO_INDEX_TEMPLATE_NAME,
   SLO_INDEX_TEMPLATE_PATTERN,
   SLO_SUMMARY_COMPONENT_TEMPLATE_MAPPINGS_NAME,
@@ -26,6 +30,7 @@ import {
   SLO_SUMMARY_INDEX_TEMPLATE_NAME,
   SLO_SUMMARY_INDEX_TEMPLATE_PATTERN,
   SLO_SUMMARY_TEMP_INDEX_NAME,
+  SLO_LIFECYCLE_POLICY_NAME,
 } from '../../common/constants';
 import { getSLOIndexTemplate } from '../assets/index_templates/slo_index_templates';
 import { getSLOSummaryIndexTemplate } from '../assets/index_templates/slo_summary_index_templates';
@@ -42,12 +47,20 @@ export class DefaultResourceInstaller implements ResourceInstaller {
   public async ensureCommonResourcesInstalled(): Promise<void> {
     try {
       this.logger.info('Installing SLO shared resources');
-      await Promise.all([
+
+      await this.createOrUpdateLifecyclePolicy(
+        getSLOIndexLifecyclePolicy(SLO_LIFECYCLE_POLICY_NAME)
+      );
+
+      await await Promise.all([
         this.createOrUpdateComponentTemplate(
           getSLOMappingsTemplate(SLO_COMPONENT_TEMPLATE_MAPPINGS_NAME)
         ),
         this.createOrUpdateComponentTemplate(
-          getSLOSettingsTemplate(SLO_COMPONENT_TEMPLATE_SETTINGS_NAME)
+          getSLOSettingsTemplate({
+            name: SLO_COMPONENT_TEMPLATE_SETTINGS_NAME,
+            lifecyclePolicyName: SLO_LIFECYCLE_POLICY_NAME,
+          })
         ),
         this.createOrUpdateComponentTemplate(
           getSLOSummaryMappingsTemplate(SLO_SUMMARY_COMPONENT_TEMPLATE_MAPPINGS_NAME)
@@ -75,13 +88,83 @@ export class DefaultResourceInstaller implements ResourceInstaller {
         )
       );
 
-      await this.createIndex(SLO_DESTINATION_INDEX_NAME);
-      await this.createIndex(SLO_SUMMARY_DESTINATION_INDEX_NAME);
-      await this.createIndex(SLO_SUMMARY_TEMP_INDEX_NAME);
+      await this.createIndices();
     } catch (err) {
       this.logger.error(`Error installing resources shared for SLO: ${err.message}`);
       throw err;
     }
+  }
+
+  private async doesIndexExist(indexName: string) {
+    let indexExists = false;
+    try {
+      indexExists = await retryTransientEsErrors(
+        () => this.esClient.indices.exists({ index: indexName, expand_wildcards: 'all' }),
+        {
+          logger: this.logger,
+        }
+      );
+    } catch (error) {
+      if (error?.statusCode !== 404) {
+        this.logger.error(`Error fetching index for ${indexName} - ${error.message}`);
+        throw error;
+      }
+    }
+
+    return indexExists;
+  }
+
+  async createIndex({ index, aliases }: IndicesCreateRequest) {
+    this.logger.debug(`Checking existence of index - ${index}`);
+
+    // check if index exists
+    const indexExists = await this.doesIndexExist(index);
+    // return if index already created
+    if (indexExists) {
+      return;
+    }
+
+    this.logger.info(`Creating index - ${index}`);
+    try {
+      await retryTransientEsErrors(() => this.esClient.indices.create({ index, aliases }), {
+        logger: this.logger,
+      });
+    } catch (error) {
+      if (error?.meta?.body?.error?.type !== 'resource_already_exists_exception') {
+        this.logger.error(`Error creating index ${index} - ${error.message}`);
+        throw error;
+      }
+    }
+  }
+
+  async createIndices() {
+    await Promise.all([
+      this.createIndex({
+        index: SLO_DESTINATION_INITIAL_ROLLOVER_INDEX_NAME,
+        aliases: {
+          [SLO_DESTINATION_INDEX_NAME]: {
+            is_write_index: true,
+          },
+        },
+      }),
+      this.createIndex({ index: SLO_SUMMARY_DESTINATION_INDEX_NAME }),
+      this.createIndex({ index: SLO_SUMMARY_TEMP_INDEX_NAME }),
+    ]);
+  }
+
+  async deleteIndex(indexName: string) {
+    const indexExists = this.doesIndexExist(indexName);
+    if (!indexExists) {
+      return;
+    }
+    return retryTransientEsErrors(() => this.esClient.indices.delete({ index: indexName }));
+  }
+
+  async deleteIndices() {
+    await Promise.all([
+      this.deleteIndex(SLO_SUMMARY_DESTINATION_INDEX_NAME),
+      this.deleteIndex(SLO_DESTINATION_INDEX_NAME),
+    ]);
   }
 
   private async createOrUpdateComponentTemplate(template: ClusterPutComponentTemplateRequest) {
@@ -98,6 +181,16 @@ export class DefaultResourceInstaller implements ResourceInstaller {
     }
   }
 
+  private async createOrUpdateLifecyclePolicy(request: IlmPutLifecycleRequest) {
+    const currentVersion = await fetchILMPolicyVersion(request.name, this.logger, this.esClient);
+    if (request.policy?._meta?.version && currentVersion === request.policy?._meta.version) {
+      this.logger.info(`SLO lifecycle policy found with version [${request.policy._meta.version}]`);
+    } else {
+      this.logger.info(`Installing SLO lifecycle policy [${request.name}]`);
+      return this.execute(() => this.esClient.ilm.putLifecycle(request));
+    }
+  }
+
   private async createOrUpdateIndexTemplate(template: IndicesPutIndexTemplateRequest) {
     const currentVersion = await fetchIndexTemplateVersion(
       template.name,
@@ -110,16 +203,6 @@ export class DefaultResourceInstaller implements ResourceInstaller {
     } else {
       this.logger.info(`Installing SLO index template [${template.name}]`);
       return this.execute(() => this.esClient.indices.putIndexTemplate(template));
-    }
-  }
-
-  private async createIndex(indexName: string) {
-    try {
-      await this.execute(() => this.esClient.indices.create({ index: indexName }));
-    } catch (err) {
-      if (err?.meta?.body?.error?.type !== 'resource_already_exists_exception') {
-        throw err;
-      }
     }
   }
 
@@ -147,6 +230,23 @@ async function fetchComponentTemplateVersion(
   );
 
   return getTemplateRes?.component_templates?.[0]?.component_template?._meta?.version || null;
+}
+
+async function fetchILMPolicyVersion(name: string, logger: Logger, esClient: ElasticsearchClient) {
+  const getPolicyRes = await retryTransientEsErrors(
+    () =>
+      esClient.ilm.getLifecycle(
+        {
+          name,
+        },
+        {
+          ignore: [404],
+        }
+      ),
+    { logger }
+  );
+
+  return getPolicyRes?.[name]?.policy?._meta?.version || null;
 }
 
 async function fetchIndexTemplateVersion(
