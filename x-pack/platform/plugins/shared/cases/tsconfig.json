@@ -83,6 +83,7 @@
     "@kbn/code-editor-mock",
     "@kbn/monaco",
     "@kbn/code-editor",
+    "@kbn/core-workspace-state",
   ],
   "exclude": [
     "target/**/*",

@@ -10,12 +10,14 @@ import { EuiToolTip, EuiButtonIcon } from '@elastic/eui';
 import * as i18n from '../translations';
 import { useCaseViewNavigation, useCaseViewParams } from '../../../common/navigation';
 import { CASE_VIEW_PAGE_TABS } from '../../../../common/types';
+import type { CaseUI } from '../../../containers/types';
 
 interface UserActionShowAlertProps {
   id: string;
   alertId: string;
   index: string;
   onShowAlertDetails?: (alertId: string, index: string) => void;
+  caseData: CaseUI;
 }
 
 const UserActionShowAlertComponent = ({
@@ -23,17 +25,17 @@ const UserActionShowAlertComponent = ({
   alertId,
   index,
   onShowAlertDetails,
+  caseData,
 }: UserActionShowAlertProps) => {
   const { navigateToCaseView } = useCaseViewNavigation();
-  const { detailName } = useCaseViewParams();
 
   const onClick = useCallback(() => {
     if (onShowAlertDetails) {
       onShowAlertDetails(alertId, index);
     } else {
-      navigateToCaseView({ detailName, tabId: CASE_VIEW_PAGE_TABS.ALERTS });
+      navigateToCaseView({ detailName: caseData.id, tabId: CASE_VIEW_PAGE_TABS.ALERTS });
     }
-  }, [alertId, detailName, index, navigateToCaseView, onShowAlertDetails]);
+  }, [alertId, caseData.id, index, navigateToCaseView, onShowAlertDetails]);
 
   return (
     <EuiToolTip position="top" content={<p>{i18n.SHOW_ALERT_TOOLTIP}</p>}>

@@ -43,6 +43,16 @@ export {
 } from './navigation';
 
 export {
+  type CasesState,
+  type Dashboard,
+  setActiveCase,
+  setSuggestedAlerts,
+  setSuggestedDashboards,
+  setSuggestedDiscoverSessions,
+  addDashboardToCase,
+} from './cases';
+
+export {
   closeToolbox,
   openToolbox,
   setToolboxSize,
@@ -55,6 +65,7 @@ export {
   WORKSPACE_TOOL_AI_ASSISTANT,
   WORKSPACE_TOOL_FEEDBACK,
   WORKSPACE_TOOL_HELP,
+  WORKSPACE_TOOL_CASES,
   WORKSPACE_TOOL_NEWSFEED,
   WORKSPACE_TOOL_PROFILE,
   WORKSPACE_TOOL_RECENT,

@@ -19,9 +19,15 @@ export interface EditableTitleProps {
   isLoading: boolean;
   title: string;
   onSubmit: (title: string) => void;
+  elementType?: 'h1' | 'h2' | 'h3' | 'h4' | 'h5' | 'h6';
 }
 
-const EditableTitleComponent: React.FC<EditableTitleProps> = ({ onSubmit, isLoading, title }) => {
+const EditableTitleComponent: React.FC<EditableTitleProps> = ({
+  onSubmit,
+  isLoading,
+  title,
+  elementType = 'h1',
+}) => {
   const { releasePhase, permissions } = useCasesContext();
   const [editMode, setEditMode] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -91,7 +97,7 @@ const EditableTitleComponent: React.FC<EditableTitleProps> = ({ onSubmit, isLoad
             },
           }}
           inputAriaLabel="Editable title input field"
-          heading="h1"
+          heading={elementType}
           size="s"
           isInvalid={hasErrors}
           isLoading={isLoading}

@@ -8,6 +8,7 @@
  */
 
 import { BehaviorSubject, filter, map } from 'rxjs';
+import { ChromeStart } from '@kbn/core/public';
 
 import type {
   ContentManagementPublicSetup,
@@ -95,6 +96,7 @@ export interface DashboardSetupDependencies {
 }
 
 export interface DashboardStartDependencies {
+  chrome: ChromeStart;
   data: DataPublicPluginStart;
   dataViewEditor: DataViewEditorStart;
   embeddable: EmbeddableStart;

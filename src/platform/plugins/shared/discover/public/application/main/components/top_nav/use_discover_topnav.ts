@@ -7,8 +7,9 @@
  * License v3.0 only", or the "Server Side Public License, v 1".
  */
 
-import { useMemo } from 'react';
+import { useMemo, useEffect } from 'react';
 import useObservable from 'react-use/lib/useObservable';
+import { useKibana } from '@kbn/kibana-react-plugin/public';
 import { useDiscoverCustomization } from '../../../../customizations';
 import { useDiscoverServices } from '../../../../hooks/use_discover_services';
 import { useInspector } from '../../hooks/use_inspector';
@@ -28,6 +29,13 @@ export const useDiscoverTopNav = ({
   stateContainer: DiscoverStateContainer;
 }) => {
   const services = useDiscoverServices();
+  const {
+    services: {
+      chrome: {
+        workspace: { cases },
+      },
+    },
+  } = useKibana();
   const topNavCustomization = useDiscoverCustomization('top_nav');
   const hasSavedSearchChanges = useObservable(stateContainer.savedSearchState.getHasChanged$());
   const hasUnsavedChanges = Boolean(
@@ -45,6 +53,7 @@ export const useDiscoverTopNav = ({
     [stateContainer, services, hasUnsavedChanges, topNavCustomization]
   );
   const savedSearchId = useSavedSearch().id;
+  const savedSearchTitle = useSavedSearch().title;
   const savedSearchHasChanged = useSavedSearchHasChanged();
   const shouldShowESQLToDataViewTransitionModal = !savedSearchId || savedSearchHasChanged;
   const dataView = useCurrentDataView();
@@ -54,6 +63,27 @@ export const useDiscoverTopNav = ({
     inspector: services.inspector,
     stateContainer,
   });
+
+  useEffect(() => {
+    if (savedSearchId) {
+      cases.setSuggestedDiscoverSessions([
+        {
+          id: savedSearchId,
+          title: savedSearchTitle,
+        },
+      ]);
+    } else {
+      cases.setSuggestedDiscoverSessions([
+        {
+          id: 'newId',
+          title: 'New Discover Session',
+        },
+      ]);
+    }
+    return () => {
+      cases.setSuggestedDiscoverSessions([]);
+    };
+  }, [cases, savedSearchId, savedSearchTitle]);
 
   const topNavMenu = useTopNavLinks({
     dataView,

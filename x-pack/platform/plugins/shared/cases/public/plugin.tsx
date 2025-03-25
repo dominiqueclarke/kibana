@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import React from 'react';
 import type { CoreSetup, CoreStart, Plugin, PluginInitializerContext } from '@kbn/core/public';
 import type { ManagementAppMountParams } from '@kbn/management-plugin/public';
 import { Storage } from '@kbn/kibana-utils-plugin/public';
@@ -38,6 +39,9 @@ import type {
   CasesPublicStartDependencies,
 } from './types';
 import { registerSystemActions } from './components/system_actions';
+import { WORKSPACE_TOOL_CASES } from '@kbn/core-chrome-browser';
+import { AllCasesList } from './components/all_cases/all_cases_list';
+import { App as Workbench } from './components/workbench/app';
 
 /**
  * @public
@@ -56,6 +60,7 @@ export class CasesUiPlugin
   private readonly storage = new Storage(localStorage);
   private externalReferenceAttachmentTypeRegistry: ExternalReferenceAttachmentTypeRegistry;
   private persistableStateAttachmentTypeRegistry: PersistableStateAttachmentTypeRegistry;
+  private mountParams: ManagementAppMountParams | null = null;
 
   constructor(private readonly initializerContext: PluginInitializerContext) {
     this.kibanaVersion = initializerContext.env.packageInfo.version;
@@ -99,8 +104,9 @@ export class CasesUiPlugin
             CasesPublicStartDependencies,
             unknown
           ];
+          this.mountParams = params;
 
-          const { renderApp } = await import('./application');
+          const { renderApp, App } = await import('./application');
 
           return renderApp({
             mountParams: params,
@@ -162,6 +168,26 @@ export class CasesUiPlugin
         storage: this.storage,
       }
     );
+
+    core.chrome.workspace.toolbox.registerTool({
+      toolId: WORKSPACE_TOOL_CASES,
+      button: {
+        iconType: 'casesApp',
+      },
+      size: 'regular',
+      tool: {
+        title: 'Cases',
+        children: (
+          <Workbench
+            coreStart={core}
+            pluginsStart={plugins}
+            storage={this.storage}
+            kibanaVersion={this.kibanaVersion}
+            getCasesContext={getCasesContext}
+          />
+        ),
+      },
+    });
 
     return {
       api: createClientAPI({ http: core.http }),

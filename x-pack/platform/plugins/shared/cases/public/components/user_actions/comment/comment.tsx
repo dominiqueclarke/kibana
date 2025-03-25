@@ -203,6 +203,7 @@ const getCreateCommentUserAction = ({
         onShowAlertDetails,
         handleDeleteComment,
         loadingCommentIds,
+        caseData,
       });
 
       return alertBuilder.build();
@@ -334,6 +335,7 @@ export const createCommentUserActionBuilder: UserActionBuilder = ({
       handleOutlineComment,
       label,
       icon: 'dot',
+      caseData,
     });
 
     return commonBuilder.build();

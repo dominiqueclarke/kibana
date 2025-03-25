@@ -11,6 +11,8 @@ import './_dashboard_container.scss';
 
 import classNames from 'classnames';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { useKibana } from '@kbn/kibana-react-plugin/public';
+import type { CoreStart } from '@kbn/core-lifecycle-browser';
 
 import { EuiLoadingElastic, EuiLoadingSpinner } from '@elastic/eui';
 import { SavedObjectNotFound } from '@kbn/kibana-utils-plugin/common';
@@ -45,6 +47,12 @@ export function DashboardRenderer({
   locator,
   onApiAvailable,
 }: DashboardRendererProps) {
+  const {
+    services: {
+      chrome: { workspace },
+    },
+  } = useKibana<CoreStart>();
+  console.log('workspace', workspace);
   const dashboardViewport = useRef(null);
   const dashboardContainerRef = useRef<HTMLElement | null>(null);
   const [dashboardApi, setDashboardApi] = useState<DashboardApi | undefined>();
@@ -76,6 +84,14 @@ export function DashboardRenderer({
         cleanupDashboardApi = results.cleanup;
         setDashboardApi(results.api);
         setDashboardInternalApi(results.internalApi);
+        const settings = results.api.getSettings();
+        workspace.cases.setSuggestedDashboards([
+          {
+            id: savedObjectId,
+            title: settings.title,
+            isFocused: true,
+          },
+        ]);
         onApiAvailable?.(results.api);
       })
       .catch((err) => {
@@ -85,6 +101,7 @@ export function DashboardRenderer({
     return () => {
       cleanupDashboardApi?.();
       canceled = true;
+      workspace.cases.setSuggestedDashboards([]);
     };
     // Disabling exhaustive deps because embeddable should only be created on first render.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -110,6 +127,8 @@ export function DashboardRenderer({
         error.message
       );
     }
+
+    console.log('dashboardAPI', dashboardApi);
 
     return dashboardApi && dashboardInternalApi ? (
       <div className="dashboardContainer" ref={(e) => (dashboardContainerRef.current = e)}>

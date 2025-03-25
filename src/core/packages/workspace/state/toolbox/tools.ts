@@ -15,6 +15,7 @@ export const WORKSPACE_TOOL_RECENT = 'recent';
 export const WORKSPACE_TOOL_FEEDBACK = 'feedback';
 export const WORKSPACE_TOOL_NEWSFEED = 'newsfeed';
 export const WORKSPACE_TOOL_HELP = 'help';
+export const WORKSPACE_TOOL_CASES = 'cases';
 export const WORKSPACE_TOOL_AI_ASSISTANT = 'aiAssistant';
 
 export const WORKSPACE_KNOWN_TOOLS = [
@@ -23,6 +24,7 @@ export const WORKSPACE_KNOWN_TOOLS = [
   WORKSPACE_TOOL_NEWSFEED,
   WORKSPACE_TOOL_FEEDBACK,
   WORKSPACE_TOOL_HELP,
+  WORKSPACE_TOOL_CASES,
   WORKSPACE_TOOL_AI_ASSISTANT,
 ] as const;
 

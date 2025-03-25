@@ -24,10 +24,15 @@ export interface WorkspaceToolboxService {
   registerTool: (tool: WorkspaceTool) => void;
 }
 
+export interface WorkspaceCasesService {
+  setActiveCase: (caseId: string) => void;
+}
+
 export interface WorkspaceService {
   isEnabled: () => boolean;
   header: WorkspaceHeaderService;
   toolbox: WorkspaceToolboxService;
+  cases: WorkspaceCasesService;
   getStateProvider: () => ({ children }: { children: ReactNode }) => JSX.Element;
 }
 
@@ -38,6 +43,7 @@ export {
   WORKSPACE_TOOL_AI_ASSISTANT,
   WORKSPACE_TOOL_FEEDBACK,
   WORKSPACE_TOOL_HELP,
+  WORKSPACE_TOOL_CASES,
   WORKSPACE_TOOL_NEWSFEED,
   WORKSPACE_TOOL_PROFILE,
   WORKSPACE_TOOL_RECENT,

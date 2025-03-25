@@ -28,11 +28,18 @@ import type { FeatureFlagsStart } from '@kbn/core-feature-flags-browser';
 import type { HttpStart } from '@kbn/core-http-browser';
 import type { CustomBranding } from '@kbn/core-custom-branding-common';
 import {
+  type CasesState,
   setIsLoading,
   setIsChromeVisible,
   setHomeHref,
   setIconType,
   createStore,
+  setActiveCase,
+  setSuggestedAlerts,
+  setSuggestedDashboards,
+  setSuggestedDiscoverSessions,
+  addDashboardToCase,
+  Dashboard,
 } from '@kbn/core-workspace-state';
 import { ApplicationStart } from '@kbn/core-application-browser';
 import { RecentlyAccessed } from '@kbn/recently-accessed';
@@ -160,6 +167,26 @@ export class WorkspaceService {
         },
         getSearchControl: () => {
           return this.search;
+        },
+      },
+      cases: {
+        getSlice: () => {
+          return store.getState().cases;
+        },
+        setActiveCase: (caseId: string) => {
+          store.dispatch(setActiveCase(caseId));
+        },
+        setSuggestedAlerts: (alerts: CasesState['suggestedAlerts']) => {
+          store.dispatch(setSuggestedAlerts(alerts));
+        },
+        setSuggestedDashboards: (dashboards: CasesState['suggestedDashboards']) => {
+          store.dispatch(setSuggestedDashboards(dashboards));
+        },
+        setSuggestedDiscoverSessions: (sessions: CasesState['suggestedDiscoverSessions']) => {
+          store.dispatch(setSuggestedDiscoverSessions(sessions));
+        },
+        addDashboardToCase: (dashboard: Dashboard) => {
+          store.dispatch(addDashboardToCase(dashboard));
         },
       },
     };

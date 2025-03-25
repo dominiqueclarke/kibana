@@ -18,6 +18,7 @@ import { UserActionCopyLink } from './copy_link';
 import { UserActionMoveToReference } from './move_to_reference';
 import { HoverableUserWithAvatarResolver } from '../user_profiles/hoverable_user_with_avatar_resolver';
 import { getUserActionAriaLabel } from './user_actions_aria_labels';
+import { CaseUI } from '../../containers/types';
 
 interface Props {
   userAction: SnakeToCamelCase<ConnectorUserAction>;
@@ -53,6 +54,7 @@ type BuilderArgs = Pick<
 > & {
   label: EuiCommentProps['event'];
   icon: EuiCommentProps['timelineAvatar'];
+  caseData?: CaseUI;
 };
 
 export const createCommonUpdateUserActionBuilder = ({
@@ -61,6 +63,7 @@ export const createCommonUpdateUserActionBuilder = ({
   label,
   icon,
   handleOutlineComment,
+  caseData,
 }: BuilderArgs): ReturnType<UserActionBuilder> => {
   return {
     build: () => [
@@ -79,7 +82,7 @@ export const createCommonUpdateUserActionBuilder = ({
         actions: (
           <EuiFlexGroup responsive={false}>
             <EuiFlexItem grow={false}>
-              <UserActionCopyLink id={userAction.id} />
+              <UserActionCopyLink id={userAction.id} caseId={caseData?.id} />
             </EuiFlexItem>
             {showMoveToReference(userAction.action, userAction.commentId) && (
               <EuiFlexItem grow={false}>

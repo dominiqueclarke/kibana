@@ -27,6 +27,7 @@ type BuilderArgs = Pick<
   UserActionBuilderArgs,
   | 'userAction'
   | 'alertData'
+  | 'caseData'
   | 'getRuleDetailsHref'
   | 'onRuleDetailsClick'
   | 'loadingAlertData'
@@ -47,6 +48,7 @@ const getSingleAlertUserAction = ({
   onRuleDetailsClick,
   onShowAlertDetails,
   handleDeleteComment,
+  caseData,
 }: BuilderArgs): EuiCommentProps[] => {
   const alertId = getNonEmptyField(attachment.alertId);
   const alertIndex = getNonEmptyField(attachment.index);
@@ -86,6 +88,7 @@ const getSingleAlertUserAction = ({
               alertId={alertId}
               index={alertIndex}
               onShowAlertDetails={onShowAlertDetails}
+              caseData={caseData}
             />
           </EuiFlexItem>
           <AlertPropertyActions

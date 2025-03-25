@@ -19,7 +19,7 @@ import { useApplication } from '../lib/kibana/use_application';
 export const useCaseViewParams = () => useParams<CaseViewPathParams>();
 
 export function useUrlParams() {
-  const { search } = useLocation();
+  const { search } = useLocation() || {};
   const [urlParams, setUrlParams] = useState<CaseViewPathSearchParams>(() => parseURL(search));
   const toUrlParams = useCallback(
     (params: CaseViewPathSearchParams = urlParams) =>

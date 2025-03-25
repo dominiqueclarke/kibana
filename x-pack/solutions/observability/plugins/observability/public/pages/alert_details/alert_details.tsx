@@ -5,8 +5,9 @@
  * 2.0.
  */
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { useHistory, useLocation, useParams } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 import { usePerformanceContext } from '@kbn/ebt-tools';
 import { i18n } from '@kbn/i18n';
 import { FormattedMessage } from '@kbn/i18n-react';
@@ -84,7 +85,8 @@ export const getPageTitle = (ruleCategory: string) => {
   });
 };
 
-export function AlertDetails() {
+export function Component() {
+  const dispatch = useDispatch();
   const {
     cases: {
       helpers: { canUseCases },
@@ -95,6 +97,11 @@ export function AlertDetails() {
     observabilityAIAssistant,
     uiSettings,
     serverless,
+    chrome: {
+      workspace: {
+        cases: { setSuggestedAlerts },
+      },
+    },
   } = useKibana().services;
   const { onPageReady } = usePerformanceContext();
 
@@ -159,7 +166,23 @@ export function AlertDetails() {
       setRuleTypeModel(ruleTypeRegistry.get(alertDetail?.formatted.fields[ALERT_RULE_TYPE_ID]!));
       setAlertStatus(alertDetail?.formatted?.fields[ALERT_STATUS] as AlertStatus);
     }
-  }, [alertDetail, ruleTypeRegistry]);
+  }, [alertDetail, ruleTypeRegistry, dispatch]);
+
+  useEffect(() => {
+    if (alertDetail) {
+      setSuggestedAlerts([
+        {
+          id: alertId,
+          isFocused: true,
+          name: getPageTitle(alertDetail.formatted.fields[ALERT_RULE_CATEGORY]),
+        },
+      ]);
+    }
+
+    return () => {
+      setSuggestedAlerts([]);
+    };
+  }, [setSuggestedAlerts, alertDetail, alertId]);
 
   useBreadcrumbs(
     [
@@ -379,4 +402,18 @@ function getRelevantAlertFields(alertDetail: AlertData) {
     'kibana.alert.maintenance_window_ids',
     'kibana.alert.consecutive_matches',
   ]);
+}
+
+export function AlertDetails() {
+  const {
+    chrome: {
+      workspace: { getStateProvider },
+    },
+  } = useKibana().services;
+  const WorkSpaceProvider = useMemo(() => getStateProvider(), [getStateProvider]);
+  return (
+    <WorkSpaceProvider>
+      <Component />
+    </WorkSpaceProvider>
+  );
 }

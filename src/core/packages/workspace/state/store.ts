@@ -12,6 +12,7 @@ import { TypedUseSelectorHook, useDispatch, useSelector } from 'react-redux';
 import { workspaceReducer } from './workspace';
 import { navigationReducer, setIsNavigationCollapsed } from './navigation';
 import { toolboxReducer, openToolbox, closeToolbox, setToolboxSize } from './toolbox';
+import { casesReducer } from './cases';
 import { headerReducer } from './header';
 import {
   setIsModern,
@@ -22,12 +23,20 @@ import {
 import { toolboxSlice } from './toolbox/slice';
 import { headerSlice } from './header/slice';
 import { navigationSlice } from './navigation/slice';
+import {
+  addDashboardToCase,
+  initialState as casesInitialState,
+  casesSlice,
+  setActiveCase,
+  setSuggestedAlerts,
+} from './cases/slice';
 
 const initialState = {
   ...workspaceSlice.getInitialState(),
   ...toolboxSlice.getInitialState(),
   ...headerSlice.getInitialState(),
   ...navigationSlice.getInitialState(),
+  ...casesSlice.getInitialState(),
 };
 
 const preloadedState = JSON.parse(
@@ -38,12 +47,19 @@ export const createStore = () => {
   const listenerMiddleware = createListenerMiddleware();
 
   const store = configureStore({
-    preloadedState,
+    preloadedState: {
+      ...preloadedState,
+      cases: {
+        ...casesInitialState,
+        ...preloadedState.cases,
+      },
+    },
     reducer: {
       workspace: workspaceReducer,
       navigation: navigationReducer,
       toolbox: toolboxReducer,
       header: headerReducer,
+      cases: casesReducer,
     },
     middleware: (getDefaultMiddleware) =>
       getDefaultMiddleware().concat(listenerMiddleware.middleware),
@@ -57,19 +73,28 @@ export const createStore = () => {
       setToolboxSize,
       setIsModern,
       setIsToolboxRight,
-      setIsSearchInToolbox
+      setIsSearchInToolbox,
+      setActiveCase,
+      addDashboardToCase
     ),
     effect: (action) => {
       const {
         workspace: { isModern, isToolboxRight, isSearchInToolbox },
         navigation: { isCollapsed },
         toolbox: { currentToolId, isOpen, size },
+        cases: { dockedCaseId, dashboards },
       } = store.getState();
 
       const value = {
         workspace: { isModern, isToolboxRight, isSearchInToolbox },
         navigation: { isCollapsed },
         toolbox: { currentToolId, isOpen, size },
+        cases: {
+          dockedCaseId,
+          suggestedAlerts: [],
+          suggestedDashboards: [],
+          dashboards,
+        },
       };
 
       localStorage.setItem('workspace', JSON.stringify(value));
@@ -88,7 +113,7 @@ export type WorkspaceStore = ReturnType<typeof createStore>;
 // Infer the `RootState` and `AppDispatch` types from the store itself
 export type RootWorkspaceState = ReturnType<WorkspaceStore['getState']>;
 
-// Inferred type
+// Inferred Type
 export type WorkspaceDispatch = WorkspaceStore['dispatch'];
 
 export const useWorkspaceDispatch: () => WorkspaceDispatch = useDispatch;
