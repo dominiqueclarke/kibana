@@ -7,18 +7,13 @@
 
 import React, { useEffect, useState } from 'react';
 import {
-  formatDate,
   EuiTitle,
   EuiBasicTable,
   type EuiBasicTableColumn,
-  type EuiTableFieldDataColumnType,
-  EuiLink,
   EuiHealth,
-  EuiBadge,
   EuiSpacer,
   EuiButtonEmpty,
 } from '@elastic/eui';
-import { faker } from '@faker-js/faker';
 import { getCases } from '../../containers/api';
 import type { CasesUI, CaseUI } from '../../../common/ui/types';
 
@@ -28,36 +23,29 @@ interface CasesTableProps {
 
 export function CasesTable({ onSetActiveCase }: CasesTableProps) {
   const [cases, setCases] = useState<CasesUI>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
-      try {
-        const response = await getCases({
-          filterOptions: {
-            search: '',
-            searchFields: [],
-            severity: [],
-            assignees: [],
-            reporters: [],
-            status: [],
-            tags: [],
-            owner: ['observability'],
-            category: [],
-            customFields: {},
-          },
-        });
-        setCases(response.cases);
-      } catch (e) {
-        setError(e);
-      } finally {
-        setLoading(false);
-      }
+      const response = await getCases({
+        filterOptions: {
+          search: '',
+          searchFields: [],
+          severity: [],
+          assignees: [],
+          reporters: [],
+          status: [],
+          tags: [],
+          owner: ['observability'],
+          category: [],
+          customFields: {},
+        },
+      });
+      setCases(response.cases);
     };
 
     fetchData();
   }, []);
+
   const columns: Array<EuiBasicTableColumn<CaseUI>> = [
     {
       field: 'title',
@@ -97,15 +85,6 @@ export function CasesTable({ onSetActiveCase }: CasesTableProps) {
     },
   ];
 
-  const getRowProps = (user: User) => {
-    const { id } = user;
-    return {
-      'data-test-subj': `row-${id}`,
-      className: 'customRowClass',
-      onClick: () => {},
-    };
-  };
-
   return cases.length ? (
     <>
       <EuiTitle>
@@ -117,7 +96,6 @@ export function CasesTable({ onSetActiveCase }: CasesTableProps) {
         items={cases}
         rowHeader="firstName"
         columns={columns}
-        rowProps={getRowProps}
       />
     </>
   ) : null;

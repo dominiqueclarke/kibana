@@ -18,7 +18,7 @@ interface ActiveCaseProps {
 }
 
 export function DockedCase({ dockedCaseId }: ActiveCaseProps) {
-  const { data, isLoading, isError, refetch } = useGetCase(dockedCaseId);
+  const { data, isLoading, isError } = useGetCase(dockedCaseId);
   const { case: caseData } = data || {};
 
   const toggleButtons = [

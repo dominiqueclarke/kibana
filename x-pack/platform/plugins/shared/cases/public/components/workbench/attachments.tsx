@@ -5,10 +5,8 @@
  * 2.0.
  */
 
-import React, { useState } from 'react';
-import { useSelector } from 'react-redux';
-import { EuiButton, EuiSpacer, EuiTitle, EuiFlexGroup, EuiFlexItem } from '@elastic/eui';
-import { useKibana } from '../../common/lib/kibana';
+import React from 'react';
+import { EuiSpacer, EuiTitle } from '@elastic/eui';
 import { AttachedAlerts } from './attached_alerts';
 import { AttachedDashboards } from './attached_dashboards';
 import { SuggestedAttachments } from './suggested_attachments';
@@ -19,16 +17,6 @@ interface AttachmentsProps {
 }
 
 export const Attachments: React.FC<AttachmentsProps> = ({ caseData }: AttachmentsProps) => {
-  const {
-    services: {
-      chrome: { workspace },
-    },
-  } = useKibana();
-  const slice = workspace.cases.getSlice();
-  console.log('slice', slice);
-  const alerts = useSelector((state) => state.cases.alerts) || [];
-  console.log('alerts', alerts);
-
   return (
     <>
       <SuggestedAttachments caseData={caseData} />
@@ -39,7 +27,7 @@ export const Attachments: React.FC<AttachmentsProps> = ({ caseData }: Attachment
       <EuiSpacer size="s" />
       <AttachedAlerts caseData={caseData} />
       <EuiSpacer size="s" />
-      <AttachedDashboards caseData={caseData} />
+      <AttachedDashboards />
     </>
   );
 };

@@ -26,6 +26,14 @@ export interface WorkspaceToolboxService {
 
 export interface WorkspaceCasesService {
   setActiveCase: (caseId: string) => void;
+  addDashboardToCase: (dashboard: { id: string; title: string; isFocused?: boolean }) => void;
+  setSuggestedDashboards: (
+    dashboards: Array<{ id: string; title: string; isFocused?: boolean }>
+  ) => void;
+  setSuggestedDiscoverSessions: (
+    discoverSessions: Array<{ id: string; title: string; isFocused?: boolean }>
+  ) => void;
+  setSuggestedAlerts: (alerts: Array<{ id: string; name: string; isFocused?: boolean }>) => void;
 }
 
 export interface WorkspaceService {

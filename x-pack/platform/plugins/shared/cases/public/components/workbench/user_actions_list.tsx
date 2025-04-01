@@ -8,7 +8,7 @@
 import type { EuiCommentProps, EuiThemeComputed } from '@elastic/eui';
 import { EuiCommentList, useEuiTheme } from '@elastic/eui';
 
-import React, { useMemo, useEffect, useState } from 'react';
+import React, { useMemo } from 'react';
 import { css } from '@emotion/react';
 
 import type { AttachmentUI, UserActionUI } from '../../containers/types';
@@ -16,7 +16,6 @@ import type { UserActionBuilderArgs, UserActionTreeProps } from '../user_actions
 import { isUserActionTypeSupported } from '../user_actions/helpers';
 import { useCasesContext } from '../cases_context/use_cases_context';
 import { builderMap } from '../user_actions/builder';
-import { useCaseViewParams } from '../../common/navigation';
 import { useUserActionsHandler } from './hooks/use_user_actions_handler';
 
 const getCommentListCss = (euiTheme: EuiThemeComputed<{}>) => css`

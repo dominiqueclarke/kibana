@@ -7,10 +7,8 @@
 
 import React, { useState, useCallback } from 'react';
 import { useSelector } from 'react-redux';
-import { EuiTitle, EuiSpacer } from '@elastic/eui';
+import { type RootWorkspaceState } from '@kbn/core-workspace-state';
 import { useApplicationCapabilities, useKibana } from '../../common/lib/kibana';
-// import { AllCasesList } from './all_cases';
-// import { CasesFetch } from './cases_fetch';
 import { CasesTable } from './cases_table';
 import { DockedCase } from './docked_case';
 
@@ -24,7 +22,9 @@ const Component = ({ getCasesContext }: WorkbenchProps) => {
       chrome: { workspace },
     },
   } = useKibana();
-  const dockedCaseIdState = useSelector((state) => state.cases.dockedCaseId);
+  const dockedCaseIdState = useSelector<RootWorkspaceState>(
+    (state) => state.cases.dockedCaseId
+  ) as RootWorkspaceState['cases']['dockedCaseId'];
   const [dockedCaseId, setdockedCaseId] = useState<string | null>(dockedCaseIdState || null);
 
   const handleSetActiveCase = useCallback(

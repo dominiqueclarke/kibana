@@ -5,8 +5,7 @@
  * 2.0.
  */
 
-import React, { type ComponentType, useMemo } from 'react';
-import { useObservable } from 'react-use/lib';
+import React from 'react';
 import { css } from '@emotion/react';
 import { useSelector } from 'react-redux';
 import {
@@ -16,30 +15,16 @@ import {
   EuiBasicTable,
   EuiTitle,
   EuiSpacer,
-  type EuiTableFieldDataColumnType,
 } from '@elastic/eui';
 import { type Dashboard, type RootWorkspaceState } from '@kbn/core-workspace-state';
 import type { SetRequired } from 'type-fest';
-import type { CaseViewAlertsTableProps } from '../case_view/types';
-import type { CaseUI } from '../../../common';
 import { useKibana } from '../../common/lib/kibana';
 
-interface CaseViewAlertsProps {
-  caseData: CaseUI;
-  onAlertsTableLoaded?: (eventIds: Array<Partial<{ _id: string }>>) => void;
-  renderAlertsTable?: ComponentType<CaseViewAlertsTableProps>;
-}
-
-export const AttachedDashboards = ({
-  caseData,
-  renderAlertsTable: CustomAlertsTable,
-  onAlertsTableLoaded,
-}: CaseViewAlertsProps) => {
+export const AttachedDashboards = () => {
   const { euiTheme } = useEuiTheme();
   const { services } = useKibana();
   const {
     http: { basePath },
-    chrome: { workspace },
   } = services as SetRequired<typeof services, 'licensing'>;
 
   const dashboards = useSelector<RootWorkspaceState>(
@@ -48,7 +33,6 @@ export const AttachedDashboards = ({
   const suggestedDashboards =
     (useSelector<RootWorkspaceState>((state) => state.cases.suggestedDashboards) as Dashboard[]) ||
     [];
-  console.log('suggestedDashboards', suggestedDashboards);
   const focusedDashboard =
     suggestedDashboards.find((suggestedDashboard) => suggestedDashboard.isFocused) || null;
 

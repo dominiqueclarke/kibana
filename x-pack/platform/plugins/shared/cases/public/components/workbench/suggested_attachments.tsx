@@ -5,7 +5,7 @@
  * 2.0.
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import { useSelector } from 'react-redux';
 import {
   EuiButton,
@@ -15,7 +15,7 @@ import {
   EuiFlexItem,
   EuiEmptyPrompt,
 } from '@elastic/eui';
-import { type Dashboard, type RootWorkspaceState } from '@kbn/core-workspace-state';
+import { type RootWorkspaceState } from '@kbn/core-workspace-state';
 import { useKibana } from '../../common/lib/kibana';
 import type { CaseUI } from '../../../common';
 
@@ -33,23 +33,21 @@ export const SuggestedAttachments: React.FC<AttachmentsProps> = ({
       },
     },
   } = useKibana();
-  console.log('casesServices', cases);
-  const suggestedAlerts = useSelector<RootWorkspaceState>((state) => state.cases.suggestedAlerts);
+  const suggestedAlerts = useSelector<RootWorkspaceState>(
+    (state) => state.cases.suggestedAlerts
+  ) as RootWorkspaceState['cases']['suggestedAlerts'];
   const suggestedDashboards = useSelector<RootWorkspaceState>(
     (state) => state.cases.suggestedDashboards
-  );
+  ) as RootWorkspaceState['cases']['suggestedDashboards'];
   const suggestedDiscoverSessions = useSelector<RootWorkspaceState>(
     (state) => state.cases.suggestedDiscoverSessions
-  );
-  console.log('caseData.comments', caseData.comments);
+  ) as RootWorkspaceState['cases']['suggestedDiscoverSessions'];
   const dashboards = useSelector<RootWorkspaceState>(
     (state) => state.cases.dashboards
-  ) as Dashboard[];
+  ) as RootWorkspaceState['cases']['dashboards'];
   const filteredSuggestedAlerts = suggestedAlerts.filter(
     (alert) =>
       !caseData.comments.some((comment) => {
-        console.log('comment.alertId', comment.alertId);
-        console.log('alert.id', alert.id);
         return comment.alertId?.[0] === alert.id;
       })
   );
@@ -57,9 +55,6 @@ export const SuggestedAttachments: React.FC<AttachmentsProps> = ({
     () => suggestedDashboards.filter((dashboard) => !dashboards.some((d) => d.id === dashboard.id)),
     [dashboards, suggestedDashboards]
   );
-  console.log('dashboards in suggested attachments', dashboards);
-  console.log('filteredSuggestedAlerts', filteredSuggestedAlerts);
-  console.log('filteredSuggestedDashboards', filteredSuggestedDashboards);
   const noSuggestions =
     !filteredSuggestedAlerts.length &&
     !filteredSuggestedDashboards.length &&
