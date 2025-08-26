@@ -6,6 +6,7 @@
  */
 
 import { getAbsoluteTimeRange } from '@kbn/data-plugin/common';
+import type { Owner } from '../../../../common/constants/types';
 import type { SuggestionContext } from '../../../../common/types/domain';
 
 export const CASE_CONCEPT_AND_MANAGEMENT_PROMPT_OBSERVABILITY = `
@@ -32,6 +33,19 @@ As an assistant, your role is to support users by helping them manage, analyze, 
 
 export const CASE_CONCEPT_AND_MANAGEMENT_PROMPT_SECURITY = ``;
 
+export const CASE_CONCEPT_AND_MANAGEMENT_PROMPT_STACK = ``;
+
+export function getCaseConceptAndManagementPrompt(owner: Owner) {
+  switch (owner) {
+    case 'securitySolution':
+      return CASE_CONCEPT_AND_MANAGEMENT_PROMPT_SECURITY;
+    case 'observability':
+      return CASE_CONCEPT_AND_MANAGEMENT_PROMPT_OBSERVABILITY;
+    default:
+      return CASE_CONCEPT_AND_MANAGEMENT_PROMPT_STACK;
+  }
+}
+
 export const CASE_SUGGESTION_SYSTEM_PROMPT_OBSERVABILITY = `
 You are a helpful assistant for Elastic Observability, acting as a senior Site Reliability Engineer (SRE) with deep expertise in production investigations. Your primary goal is to support users by suggesting and analyzing additional signals that may help explain or clarify an ongoing incident.
 
@@ -44,16 +58,18 @@ You are a helpful assistant for Elastic Observability, acting as a senior Site R
 
 ## Tasks
 
-- Evaluate the current state of a case and identify the most relevant suggestion types (e.g., SLO correlation, log anomalies, synthetic test failures, APM data, infrastructure metrics, and other observability signals).
+- Review the current context of the case.
+- Identify suggestion types that may be helpful (e.g., SLO correlation, log anomalies, synthetic test failures, APM data, infrastructure metrics, and other observability signals).
 - Select and explore the most relevant suggestion type(s) based on the available context.
 - Analyze and interpret results to determine if they are useful, correlated, or irrelevant.
 - Summarize and explain the relationship of suggested signals to the ongoing incident.
+- Finalize and explain which signals should be added to the case, and why.
 
 ## Strategies
 
 - Use available context fields (such as \`service.name\`, time ranges, or other metadata) to correlate signals across different data sources.
 - For example, you may find a failed synthetics test matching the \`service.name\` field of an alert, or a synthetics test failure within the same time range as a degraded SLO.
-- Select the most relevant strategies for fetching data for each suggestion type, based on the available fields from the case context.
+- Select the most relevant strategies for each suggestion type, based on the available context.
 
 ## Capabilities
 
@@ -76,6 +92,19 @@ You are a helpful assistant for Elastic Observability, acting as a senior Site R
 `;
 
 export const CASE_SUGGESTION_SYSTEM_PROMPT_SECURITY = ``;
+
+export const CASE_SUGGESTION_SYSTEM_PROMPT_STACK = ``;
+
+export function getCaseSuggestionSystemPrompt(owner: Owner) {
+  switch (owner) {
+    case 'securitySolution':
+      return CASE_SUGGESTION_SYSTEM_PROMPT_SECURITY;
+    case 'observability':
+      return CASE_SUGGESTION_SYSTEM_PROMPT_OBSERVABILITY;
+    default:
+      return CASE_SUGGESTION_SYSTEM_PROMPT_STACK;
+  }
+}
 
 export function buildCaseContextPromptObservability(caseContext: SuggestionContext): string {
   const absoluteTimeRange = caseContext.timeRange
@@ -112,4 +141,19 @@ ${
 
 export function buildCaseContextPromptSecurity(caseContext: SuggestionContext): string {
   return ``;
+}
+
+export function buildCaseContextPromptStack(caseContext: SuggestionContext): string {
+  return ``;
+}
+
+export function buildCaseContextPrompt(caseContext: SuggestionContext, owner: Owner): string {
+  switch (owner) {
+    case 'securitySolution':
+      return buildCaseContextPromptSecurity(caseContext);
+    case 'observability':
+      return buildCaseContextPromptObservability(caseContext);
+    default:
+      return buildCaseContextPromptStack(caseContext);
+  }
 }
