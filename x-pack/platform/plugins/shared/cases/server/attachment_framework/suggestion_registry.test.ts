@@ -7,7 +7,7 @@
 
 import { AttachmentSuggestionRegistry } from './suggestion_registry';
 import type { SuggestionType, SuggestionHandler } from './types';
-import type { SuggestionContext } from '../../common/types/domain';
+import type { SuggestionContext, SuggestionOwner } from '../../common/types/domain';
 import type { KibanaRequest } from '@kbn/core/server';
 import { loggerMock } from '@kbn/logging-mocks';
 
@@ -255,6 +255,125 @@ describe('AttachmentSuggestionRegistry', () => {
       expect(mockHandler).toHaveBeenCalledWith({ request, context });
       expect(mockLogger.error).toHaveBeenCalledWith('Failed to get suggestion.', {
         error: expect.any(Error),
+      });
+    });
+  });
+
+  describe('getAllToolsForOwners', () => {
+    it('should return all tools for the given owners', () => {
+      const suggestionType: SuggestionType = {
+        id: 'test-suggestion',
+        owner: 'observability',
+        attachmentTypeId: 'attachment-1',
+        handlers: {
+          handler1: {
+            handler: jest.fn(),
+            tool: {
+              description: 'Handler 1 for test suggestion',
+            },
+          },
+          handler2: {
+            handler: jest.fn(),
+            tool: {
+              description: 'Handler 2 for test suggestion',
+            },
+          },
+        },
+      };
+
+      const suggestionType2: SuggestionType = {
+        id: 'test-suggestion-2',
+        owner: 'observability',
+        attachmentTypeId: 'attachment-2',
+        handlers: {
+          handler1: {
+            handler: jest.fn(),
+            tool: {
+              description: 'Handler 1 for test suggestion 2',
+            },
+          },
+          handler2: {
+            handler: jest.fn(),
+            tool: {
+              description: 'Handler 2 for test suggestion 2',
+            },
+          },
+        },
+      };
+
+      registry.register(suggestionType);
+      registry.register(suggestionType2);
+
+      const owners: SuggestionOwner[] = ['observability'];
+      const tools = registry.getAllToolsForOwners(owners);
+
+      expect(tools).toEqual({
+        'test-suggestion-handler1': { description: 'Handler 1 for test suggestion' },
+        'test-suggestion-handler2': { description: 'Handler 2 for test suggestion' },
+        'test-suggestion-2-handler1': { description: 'Handler 1 for test suggestion 2' },
+        'test-suggestion-2-handler2': { description: 'Handler 2 for test suggestion 2' },
+      });
+    });
+  });
+
+  describe('getAllHandlersForOwners', () => {
+    it('should return all handlers for the given owners', () => {
+      const mockHandler1: SuggestionHandler = jest.fn();
+      const mockHandler2: SuggestionHandler = jest.fn();
+      const mockHandler3: SuggestionHandler = jest.fn();
+      const mockHandler4: SuggestionHandler = jest.fn();
+
+      const suggestionType: SuggestionType = {
+        id: 'test-suggestion',
+        owner: 'observability',
+        attachmentTypeId: 'attachment-1',
+        handlers: {
+          handler1: {
+            handler: mockHandler1,
+            tool: {
+              description: 'Handler 1 for test suggestion',
+            },
+          },
+          handler2: {
+            handler: mockHandler2,
+            tool: {
+              description: 'Handler 2 for test suggestion',
+            },
+          },
+        },
+      };
+
+      const suggestionType2: SuggestionType = {
+        id: 'test-suggestion-2',
+        owner: 'observability',
+        attachmentTypeId: 'attachment-2',
+        handlers: {
+          handler1: {
+            handler: mockHandler3,
+            tool: {
+              description: 'Handler 1 for test suggestion 2',
+            },
+          },
+          handler2: {
+            handler: mockHandler4,
+            tool: {
+              description: 'Handler 2 for test suggestion 2',
+            },
+          },
+        },
+      };
+
+      registry.register(suggestionType);
+      registry.register(suggestionType2);
+
+      const owners: SuggestionOwner[] = ['observability'];
+      const tools = registry.getAllHandlersForOwners(owners);
+
+      expect(tools).toEqual({
+        'test-suggestion-handler1': mockHandler1,
+        'test-suggestion-handler2': mockHandler2,
+        'test-suggestion-2-handler1': mockHandler3,
+        'test-suggestion-2-handler2': mockHandler4,
       });
     });
   });

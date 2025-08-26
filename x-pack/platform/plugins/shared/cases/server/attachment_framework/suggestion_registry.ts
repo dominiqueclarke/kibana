@@ -6,13 +6,14 @@
  */
 
 import type { Logger, KibanaRequest } from '@kbn/core/server';
+import type { ToolDefinition } from '@kbn/inference-common';
 import { AttachmentRegistry } from '../../common/registry';
 import type {
   SuggestionContext,
   SuggestionOwner,
   SuggestionHandlerResponse,
 } from '../../common/types/domain';
-import type { SuggestionType } from './types';
+import type { SuggestionType, SuggestionHandler } from './types';
 
 export class AttachmentSuggestionRegistry extends AttachmentRegistry<SuggestionType> {
   constructor() {
@@ -55,5 +56,25 @@ export class AttachmentSuggestionRegistry extends AttachmentRegistry<SuggestionT
       },
       { suggestions: [] }
     );
+  }
+
+  public getAllToolsForOwners(owners: SuggestionOwner[]): Record<string, ToolDefinition> {
+    const tools: Record<string, ToolDefinition> = {};
+    for (const suggestion of this.getAllForOwners(owners)) {
+      for (const key of Object.keys(suggestion.handlers)) {
+        tools[`${suggestion.id}-${key}`] = suggestion.handlers[key].tool;
+      }
+    }
+    return tools;
+  }
+
+  public getAllHandlersForOwners(owners: SuggestionOwner[]): Record<string, SuggestionHandler> {
+    const handlers: Record<string, SuggestionHandler> = {};
+    for (const suggestion of this.getAllForOwners(owners)) {
+      for (const key of Object.keys(suggestion.handlers)) {
+        handlers[`${suggestion.id}-${key}`] = suggestion.handlers[key].handler;
+      }
+    }
+    return handlers;
   }
 }
