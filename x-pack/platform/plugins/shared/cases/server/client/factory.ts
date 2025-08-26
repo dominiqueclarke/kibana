@@ -16,6 +16,7 @@ import type {
 } from '@kbn/core/server';
 import type { ISavedObjectsSerializer } from '@kbn/core-saved-objects-server';
 import { SECURITY_EXTENSION_ID } from '@kbn/core-saved-objects-server';
+import type { InferenceServerStart } from '@kbn/inference-plugin/server';
 import type {
   AuditLogger,
   SecurityPluginSetup,
@@ -72,6 +73,7 @@ interface CasesClientFactoryArgs {
   attachmentSuggestionRegistry: AttachmentSuggestionRegistry;
   publicBaseUrl?: IBasePath['publicBaseUrl'];
   filesPluginStart: FilesStart;
+  inferencePluginStart: InferenceServerStart;
 }
 
 /**
@@ -167,6 +169,7 @@ export class CasesClientFactory {
         this.options.spacesPluginStart?.spacesService.getSpaceId(request) ?? DEFAULT_SPACE_ID,
       savedObjectsSerializer,
       fileService,
+      inferenceClient: this.options.inferencePluginStart.getClient({ request }),
     });
   }
 
@@ -239,6 +242,7 @@ export class CasesClientFactory {
       attachmentService,
       licensingService,
       notificationService,
+      inferenceClient: this.options.inferencePluginStart.getClient({ request }),
     };
   }
 

@@ -32,7 +32,8 @@
       "files",
       "contentManagement",
       "uiActions",
-      "spaces"
+      "spaces",
+      "inference"
     ],
     "optionalPlugins": [
       "cloud",

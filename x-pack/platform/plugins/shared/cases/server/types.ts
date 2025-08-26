@@ -18,6 +18,7 @@ import type {
   PluginSetupContract as ActionsPluginSetup,
   PluginStartContract as ActionsPluginStart,
 } from '@kbn/actions-plugin/server';
+import type { InferenceServerStart } from '@kbn/inference-plugin/server';
 import type {
   SpacesPluginSetup,
   SpacesPluginStart,
@@ -65,6 +66,7 @@ export interface CasesServerStartDependencies {
   spaces: SpacesPluginStart;
   notifications: NotificationsPluginStart;
   ruleRegistry: RuleRegistryPluginStartContract;
+  inference: InferenceServerStart;
 }
 
 export interface CaseRequestContext {

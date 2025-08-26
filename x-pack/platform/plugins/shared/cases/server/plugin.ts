@@ -262,6 +262,7 @@ export class CasePlugin
       notifications: plugins.notifications,
       ruleRegistry: plugins.ruleRegistry,
       filesPluginStart: plugins.files,
+      inferencePluginStart: plugins.inference,
     });
 
     return {

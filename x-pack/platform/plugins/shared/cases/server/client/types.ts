@@ -14,6 +14,7 @@ import type { IBasePath } from '@kbn/core-http-browser';
 import type { ISavedObjectsSerializer } from '@kbn/core-saved-objects-server';
 import type { KueryNode } from '@kbn/es-query';
 import type { FileServiceStart } from '@kbn/files-plugin/server';
+import type { InferenceClient } from '@kbn/inference-common';
 import type { CasesSearchRequest } from '../../common/types/api';
 import type { Authorization } from '../authorization/authorization';
 import type {
@@ -40,6 +41,7 @@ export interface CasesServices {
   attachmentService: AttachmentService;
   licensingService: LicensingService;
   notificationService: NotificationService;
+  inferenceClient: InferenceClient;
 }
 
 /**
@@ -55,12 +57,13 @@ export interface CasesClientArgs {
   readonly actionsClient: PublicMethodsOf<ActionsClient>;
   readonly persistableStateAttachmentTypeRegistry: PersistableStateAttachmentTypeRegistry;
   readonly externalReferenceAttachmentTypeRegistry: ExternalReferenceAttachmentTypeRegistry;
-  readonly attachmentSuggestionRegistry: PublicMethodsOf<AttachmentSuggestionRegistry>;
+  readonly attachmentSuggestionRegistry: AttachmentSuggestionRegistry;
   readonly securityStartPlugin: SecurityPluginStart;
   readonly spaceId: string;
   readonly savedObjectsSerializer: ISavedObjectsSerializer;
   readonly publicBaseUrl?: IBasePath['publicBaseUrl'];
   readonly fileService: FileServiceStart;
+  readonly inferenceClient: InferenceClient;
 }
 
 export type CasesSearchParams = Partial<
