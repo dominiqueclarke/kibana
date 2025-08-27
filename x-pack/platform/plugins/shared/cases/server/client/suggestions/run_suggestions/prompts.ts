@@ -4,7 +4,7 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-
+import dedent from 'dedent';
 import { getAbsoluteTimeRange } from '@kbn/data-plugin/common';
 import type { Owner } from '../../../../common/constants/types';
 import type { SuggestionContext } from '../../../../common/types/domain';
@@ -35,7 +35,7 @@ export const CASE_CONCEPT_AND_MANAGEMENT_PROMPT_SECURITY = ``;
 
 export const CASE_CONCEPT_AND_MANAGEMENT_PROMPT_STACK = ``;
 
-export function getCaseConceptAndManagementPrompt(owner: Owner) {
+export function getCaseConceptAndManagementSystemPrompt(owner: Owner) {
   switch (owner) {
     case 'securitySolution':
       return CASE_CONCEPT_AND_MANAGEMENT_PROMPT_SECURITY;
@@ -106,6 +106,14 @@ export function getCaseSuggestionSystemPrompt(owner: Owner) {
   }
 }
 
+export function getSystemPrompt(owner: Owner) {
+  return dedent(`
+    ${getCaseConceptAndManagementSystemPrompt(owner)}
+
+    ${getCaseSuggestionSystemPrompt(owner)}
+  `);
+}
+
 export function buildCaseContextPromptObservability(caseContext: SuggestionContext): string {
   const absoluteTimeRange = caseContext.timeRange
     ? getAbsoluteTimeRange(caseContext.timeRange)
@@ -130,10 +138,7 @@ ${
 
 ${
   caseContext['service.name']
-    ? `The affected services are: ${caseContext['service.name'].reduce(
-        (acc, curr) => `${acc}, ${curr}`,
-        ''
-      )}`
+    ? `The affected services are: ${caseContext['service.name'].join(', ')}`
     : ''
 }
 `;

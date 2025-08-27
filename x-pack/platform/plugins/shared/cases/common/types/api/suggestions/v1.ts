@@ -21,7 +21,9 @@ export interface SuggestionResponse {
 export const ANALYZE_SUGGESTION_TOOL_NAME = 'analyzeSuggestionsForCase';
 export const FINALIZE_SUGGESTIONS_TOOL_NAME = 'finalizeSuggestionsForCase';
 
-type EvaluationTools = typeof ANALYZE_SUGGESTION_TOOL_NAME | typeof FINALIZE_SUGGESTIONS_TOOL_NAME;
+export type EvaluationToolKey =
+  | typeof ANALYZE_SUGGESTION_TOOL_NAME
+  | typeof FINALIZE_SUGGESTIONS_TOOL_NAME;
 
 /*
  * Copyright Elasticsearch B.V. and/or licensed to Elasticsearch B.V. under one
@@ -67,5 +69,5 @@ export type SuggestionEvent =
   | UserMessage
   | AssistantMessageOf<{
       tools: Record<string, ToolDefinition>;
-      toolChoice?: ToolChoice<EvaluationTools>;
+      toolChoice?: ToolChoice<EvaluationToolKey>;
     }>;

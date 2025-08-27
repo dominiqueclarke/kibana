@@ -17,10 +17,12 @@ export const callAnalyzeSuggestionTool = ({
   toolCall,
   finalSuggestions,
   pendingSuggestions,
+  reviewedSuggestions,
 }: {
   toolCall: ToolCall;
   finalSuggestions: Map<string, SuggestionItem>;
   pendingSuggestions: Map<string, SuggestionItem>;
+  reviewedSuggestions: Map<string, SuggestionItem>;
 }): Observable<AnalyzeSuggestionsToolMessage | AssistantMessage> => {
   const toolCallId = toolCall.toolCallId;
   const toolName = toolCall.function.name;
@@ -74,6 +76,9 @@ export const callAnalyzeSuggestionTool = ({
     finalSuggestions.set(suggestionId, approvedSuggestion);
   }
 
+  if (suggestion) {
+    reviewedSuggestions.set(suggestionId, suggestion);
+  }
   pendingSuggestions.delete(suggestionId);
 
   const toolMessage: AnalyzeSuggestionsToolMessage = {
