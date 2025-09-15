@@ -219,6 +219,9 @@ export const CaseViewActivity = ({
           caseData={caseData}
           onUpdateField={onUpdateField}
         />
+        {KibanaServices.getConfig()?.unsafe?.enableCaseSuggestions ? (
+          <CaseSuggestions caseData={caseData} />
+        ) : null}
         <EuiSpacer size="l" />
         <EuiFlexItem grow={false}>
           <UserActionsActivityBar
@@ -268,9 +271,6 @@ export const CaseViewActivity = ({
           <h2>{i18n.CASE_SETTINGS}</h2>
         </EuiScreenReaderOnly>
         <EuiFlexGroup direction="column" responsive={false} gutterSize="xl">
-          {KibanaServices.getConfig()?.unsafe?.enableCaseSuggestions ? (
-            <CaseSuggestions caseData={caseData} />
-          ) : null}
           {caseAssignmentAuthorized ? (
             <>
               <AssignUsers

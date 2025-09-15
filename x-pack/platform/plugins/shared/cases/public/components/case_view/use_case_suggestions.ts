@@ -16,10 +16,11 @@ const MAX_SUGGESTIONS = 2;
 export const useCaseSuggestions = ({ caseData }: { caseData: CaseUI }) => {
   const [dismissedIds, setDismissedIds] = useState<string[]>([]);
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, refetch } = useQuery({
     queryKey: ['suggestions', caseData.id],
     queryFn: () => getCaseSuggestions({ caseId: caseData.id }),
     refetchOnWindowFocus: false,
+    enabled: false,
   });
 
   const { attachmentSuggestionRegistry } = useCasesContext();
@@ -47,5 +48,6 @@ export const useCaseSuggestions = ({ caseData }: { caseData: CaseUI }) => {
     visibleSuggestions,
     setDismissedIds,
     componentById,
+    fetchSuggestions: refetch,
   };
 };
