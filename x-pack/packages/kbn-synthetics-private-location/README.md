@@ -15,6 +15,11 @@ For available options, run `--help`.
 This script requires `docker` and the following `kibama.yml` configuration.
 
 ```
+# Install the fleet server package
+xpack.fleet.packages:
+  - name: fleet_server
+    version: latest
+
 # Create an agent policy for Fleet Server.
 xpack.fleet.agentPolicies:
   - name: Fleet Server policy
