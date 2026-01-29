@@ -34,3 +34,5 @@ export const EventsAsUnit = 'events';
 export enum ALERTS_API_URLS {
   INTERNAL_RELATED_DASHBOARDS = '/internal/observability/alerts/related_dashboards',
 }
+
+export const UNIFIED_ALERTS_SEARCH_STRATEGY = 'observabilityUnifiedAlertsSearchStrategy';

@@ -23,6 +23,7 @@ import type {
 import { AlertsTableCellValue } from './common/cell_value';
 import { usePluginContext } from '../../hooks/use_plugin_context';
 import { getColumns } from './common/get_columns';
+import { UNIFIED_ALERTS_SEARCH_STRATEGY } from '../../../common/constants';
 
 const columns = getColumns({ showRuleName: true });
 const initialSort = [
@@ -42,12 +43,28 @@ export function ObservabilityAlertsTable(props: ObservabilityAlertsTableProps) {
   const { observability } = useKibana<{ observability?: ObservabilityPublicStart }>().services;
   const { observabilityRuleTypeRegistry, config } = usePluginContext();
 
+  // Ensure we always have rule type IDs - merge any passed ruleTypeIds with our defaults
+  // This is important for Cases view which may pass empty ruleTypeIds for external alerts
+  const effectiveRuleTypeIds =
+    props.ruleTypeIds && props.ruleTypeIds.length > 0
+      ? [
+          ...new Set([
+            ...props.ruleTypeIds,
+            ...OBSERVABILITY_RULE_TYPE_IDS_WITH_SUPPORTED_STACK_RULE_TYPES,
+          ]),
+        ]
+      : OBSERVABILITY_RULE_TYPE_IDS_WITH_SUPPORTED_STACK_RULE_TYPES;
+
+  // Destructure ruleTypeIds from props to avoid passing it twice
+  const { ruleTypeIds: _ruleTypeIds, ...restProps } = props;
+
   return (
     <AlertsTable<ObservabilityAlertsTableContext>
       columns={columns}
-      ruleTypeIds={OBSERVABILITY_RULE_TYPE_IDS_WITH_SUPPORTED_STACK_RULE_TYPES}
+      ruleTypeIds={effectiveRuleTypeIds}
       sort={initialSort}
       casesConfiguration={caseConfiguration}
+      searchStrategy={UNIFIED_ALERTS_SEARCH_STRATEGY}
       additionalContext={{
         observabilityRuleTypeRegistry:
           observabilityRuleTypeRegistry ?? observability?.observabilityRuleTypeRegistry,
@@ -58,7 +75,7 @@ export function ObservabilityAlertsTable(props: ObservabilityAlertsTableProps) {
       actionsColumnWidth={120}
       renderExpandedAlertView={AlertsTableExpandedAlertView}
       showAlertStatusWithFlapping
-      {...props}
+      {...restProps}
     />
   );
 }

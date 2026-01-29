@@ -20,13 +20,15 @@ import {
 } from '@kbn/rule-data-utils';
 import { i18n } from '@kbn/i18n';
 
-export const getColumns = (
-  {
-    showRuleName,
-  }: {
-    showRuleName?: boolean;
-  } = { showRuleName: false }
-): EuiDataGridColumn[] => {
+export const ALERT_SOURCE = 'kibana.alert.source';
+
+export const getColumns = ({
+  showRuleName,
+  showSource,
+}: {
+  showRuleName?: boolean;
+  showSource?: boolean;
+} = {}): EuiDataGridColumn[] => {
   const ruleNameColumn: EuiDataGridColumn[] = showRuleName
     ? [
         {
@@ -42,6 +44,22 @@ export const getColumns = (
       ]
     : [];
 
+  const sourceColumn: EuiDataGridColumn[] =
+    showSource !== false
+      ? [
+          {
+            displayAsText: i18n.translate(
+              'xpack.observability.alertsTGrid.alertSourceColumnDescription',
+              {
+                defaultMessage: 'Source',
+              }
+            ),
+            id: ALERT_SOURCE,
+            initialWidth: 120,
+          },
+        ]
+      : [];
+
   return [
     {
       displayAsText: i18n.translate('xpack.observability.alertsTGrid.statusColumnDescription', {
@@ -50,6 +68,7 @@ export const getColumns = (
       id: ALERT_STATUS,
       initialWidth: 120,
     },
+    ...sourceColumn,
     {
       displayAsText: i18n.translate('xpack.observability.alertsTGrid.triggeredColumnDescription', {
         defaultMessage: 'Triggered',

@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { WorkflowsExtensionsPublicPluginSetup } from '@kbn/workflows-extensions/public';
 import type { CoreSetup, CoreStart, Plugin, PluginInitializerContext } from '@kbn/core/public';
 import type { ManagementSetup } from '@kbn/management-plugin/public';
 import type { SpacesPluginStart } from '@kbn/spaces-plugin/public';
@@ -14,6 +15,7 @@ import type { KqlPluginStart } from '@kbn/kql/public';
 import type { ServerlessPluginStart } from '@kbn/serverless/public';
 
 import type { MaintenanceWindowsServerStart } from '@kbn/maintenance-windows-plugin/server';
+import { alertCreateStepDefinition } from './workflows/step_types/alert_create';
 import type { AlertNavigationHandler } from './alert_navigation_registry';
 import { AlertNavigationRegistry } from './alert_navigation_registry';
 import { loadRule, loadRuleType } from './services/rule_api';
@@ -65,6 +67,7 @@ export interface PluginStartContract {
 export interface AlertingPluginSetup {
   management: ManagementSetup;
   maintenanceWindows?: MaintenanceWindowsServerStart;
+  workflowsExtensions?: WorkflowsExtensionsPublicPluginSetup;
 }
 
 export interface AlertingPluginStart {
@@ -100,6 +103,10 @@ export class AlertingPublicPlugin
 
   public setup(core: CoreSetup, plugins: AlertingPluginSetup) {
     this.alertNavigationRegistry = new AlertNavigationRegistry();
+
+    if (plugins.workflowsExtensions) {
+      plugins.workflowsExtensions.registerStepDefinition(alertCreateStepDefinition);
+    }
 
     const registerNavigation = async (
       applicationId: string,

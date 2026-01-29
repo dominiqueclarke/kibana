@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { WorkflowsExtensionsServerPluginSetup } from '@kbn/workflows-extensions/server';
 import type { PublicMethodsOf } from '@kbn/utility-types';
 import type { Subject, Observable } from 'rxjs';
 import { BehaviorSubject, ReplaySubject, map, distinctUntilChanged } from 'rxjs';
@@ -114,6 +115,7 @@ import { BackfillClient } from './backfill_client/backfill_client';
 import { MaintenanceWindowsService } from './task_runner/maintenance_windows';
 import { AlertDeletionClient } from './alert_deletion';
 import { registerGapAutoFillSchedulerTask } from './lib/rule_gaps/task/gap_auto_fill_scheduler_task';
+import { getAlertCreateStepDefinition } from './workflows/step_types/alert_create';
 
 export const EVENT_LOG_PROVIDER = 'alerting';
 export const EVENT_LOG_ACTIONS = {
@@ -202,6 +204,7 @@ export interface AlertingPluginsSetup {
   data: DataPluginSetup;
   features: FeaturesPluginSetup;
   kql: KQLPluginSetup;
+  workflowsExtensions?: WorkflowsExtensionsServerPluginSetup;
 }
 
 export interface AlertingPluginsStart {
@@ -353,6 +356,21 @@ export class AlertingPlugin {
           elasticsearchAndSOAvailability$,
           isServerless: this.isServerless,
         });
+
+        // Register the 'external' alerts context
+        this.alertsService.register({
+          context: 'external',
+          useEcs: true,
+          mappings: {
+            fieldMap: {
+              'kibana.alert.external_source': { type: 'keyword' },
+              'kibana.alert.connector_id': { type: 'keyword' },
+              'kibana.alert.raw_payload': { type: 'flattened', required: false },
+              'kibana.alert.external_url': { type: 'keyword', required: false },
+              'kibana.alert.fingerprint': { type: 'keyword', required: false },
+            },
+          },
+        });
       }
     }
 
@@ -445,7 +463,7 @@ export class AlertingPlugin {
       schedulerConfig: this.config.gapAutoFillScheduler,
     });
 
-    // Routes
+    // Register routes
     const router = core.http.createRouter<AlertingRequestHandlerContext>();
     // Register routes
     defineRoutes({
@@ -460,6 +478,12 @@ export class AlertingPlugin {
       alertingConfig: this.config,
       core,
     });
+
+    // Register workflow step types if the extension point is available
+    if (plugins.workflowsExtensions && this.alertsService) {
+      const alertCreateStep = getAlertCreateStepDefinition(core, this.alertsService);
+      plugins.workflowsExtensions.registerStepDefinition(alertCreateStep);
+    }
 
     return {
       registerConnectorAdapter: <

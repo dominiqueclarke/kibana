@@ -6,7 +6,7 @@
  */
 
 import type { ElasticsearchClient } from '@kbn/core/server';
-
+import { v4 as uuidv4 } from 'uuid';
 import {
   ALERT_INSTANCE_ID,
   ALERT_RULE_UUID,
@@ -82,6 +82,7 @@ import { ErrorWithType } from '../lib/error_with_type';
 import { DEFAULT_MAX_ALERTS } from '../config';
 import { RUNTIME_MAINTENANCE_WINDOW_ID_FIELD } from './lib/get_summarized_alerts_query';
 import { retryTransientEsErrors } from '../lib/retry_transient_es_errors';
+import type { ExternalEvent } from '../../common/workflows/step_types/alert_create';
 
 export interface AlertsClientParams extends CreateAlertsClientParams {
   elasticsearchClientPromise: Promise<ElasticsearchClient>;
@@ -539,6 +540,205 @@ export class AlertsClient<
         );
         throw err;
       }
+    }
+  }
+
+  /**
+   * Persists one or more external alerts directly, bypassing the report/process/persist state machine.
+   * This provides a clean API for one-off ingestion events, like from a workflow step.
+   * @param payloads An array of external alert data objects.
+   * @returns The UUIDs of the newly created alert documents.
+   */
+  public async persistExternalAlerts(events: ExternalEvent[]): Promise<string[]> {
+    if (events.length === 0) {
+      return [];
+    }
+    console.log(`[AlertsClient] Received ${events.length} external events to persist.`);
+    const esClient = await this.options.elasticsearchClientPromise;
+    const currentTime = new Date().toISOString();
+    const alertIds: string[] = [];
+    const fingerprints = events.map((e) => e.fingerprint).filter((fp): fp is string => !!fp);
+
+    // 1. Find the most recent existing alerts for each fingerprint
+    const existingAlerts = new Map<
+      string,
+      { _id: string; _index: string; status: string; uuid: string }
+    >();
+    if (fingerprints.length > 0) {
+      try {
+        console.log(
+          `[AlertsClient] Searching for existing alerts with fingerprints:`,
+          fingerprints
+        );
+        const response = await this.search<{
+          'kibana.alert.fingerprint': string;
+          'kibana.alert.status': string;
+          'kibana.alert.uuid': string;
+        }>({
+          size: fingerprints.length,
+          query: {
+            terms: { 'kibana.alert.fingerprint': fingerprints },
+          },
+          collapse: {
+            field: 'kibana.alert.fingerprint',
+          },
+          sort: [{ '@timestamp': 'desc' }],
+          _source: ['kibana.alert.status', 'kibana.alert.fingerprint', 'kibana.alert.uuid'],
+        });
+
+        if (response.hits) {
+          for (const hit of response.hits) {
+            const source = hit._source;
+            if (source) {
+              const fingerprint = source['kibana.alert.fingerprint'];
+              const status = source['kibana.alert.status'];
+              const uuid = source['kibana.alert.uuid'];
+              if (fingerprint && status && uuid) {
+                existingAlerts.set(fingerprint, { _id: hit._id, _index: hit._index, status, uuid });
+              }
+            }
+          }
+        }
+        console.log('[AlertsClient] Found existing alerts:', existingAlerts);
+      } catch (err) {
+        // If the index doesn't exist, we can safely assume no alerts exist.
+        if (err.statusCode !== 404) {
+          throw err;
+        }
+        console.log(
+          '[AlertsClient] No existing alerts index found. All events will be treated as new.'
+        );
+      }
+    }
+
+    // 2. Separate new vs. existing and build bulk body
+    const bulkBody = events.flatMap((event) => {
+      // console.log('[AlertsClient] Processing event:', event);
+      if (!event.fingerprint) {
+        // Should not happen with the current implementation, but as a safeguard.
+        this.options.logger.warn(
+          'External event is missing a fingerprint. Skipping.',
+          this.logTags
+        );
+        return [];
+      }
+
+      const existing = event.fingerprint ? existingAlerts.get(event.fingerprint) : undefined;
+
+      // Case 1: Redundant recovery signal. Skip.
+      if (existing && existing.status === ALERT_STATUS_RECOVERED && event.status === 'recovered') {
+        console.log(
+          `[AlertsClient] Skipping redundant 'recovered' event for an already recovered alert.`,
+          { fingerprint: event.fingerprint }
+        );
+        return [];
+      }
+
+      // Determine the correct UUID for the alert document
+      const isUpdate = existing && existing.status !== ALERT_STATUS_RECOVERED;
+      const alertId = isUpdate ? existing.uuid : uuidv4();
+
+      const primaryLink = event.links?.[0]?.url;
+
+      console.log('primaryLink:', primaryLink);
+
+      const alertDocument = {
+        '@timestamp': event.timestamp || currentTime,
+        'kibana.alert.uuid': alertId,
+        'kibana.alert.rule.name': event.rule_name || 'External Alert',
+        'kibana.alert.reason': event.reason,
+        'kibana.alert.status': event.status,
+        'kibana.alert.severity': event.severity,
+        'kibana.alert.start': event.timestamp || currentTime,
+        'kibana.alert.time_range': {
+          gte: event.timestamp || currentTime,
+          lte: event.timestamp || currentTime,
+        },
+        'kibana.alert.source': event.source,
+        'kibana.alert.raw_payload': event.raw_payload,
+        'kibana.alert.external_url': primaryLink,
+        'kibana.alert.fingerprint': event.fingerprint,
+        'kibana.alert.rule.uuid': `external-${event.source || 'external'}-${alertId}`,
+        'kibana.alert.rule.producer': event.source || 'external',
+        'kibana.alert.rule.consumer': 'alerts',
+        'kibana.alert.rule.type_id': 'kibana.external-alert',
+        'kibana.alert.instance.id': alertId,
+        'kibana.alert.space_ids': ['default'],
+        'kibana.version': this.options.kibanaVersion,
+        tags: event.tags || [],
+        'event.action': event.status === 'recovered' ? 'close' : 'open',
+        'event.kind': 'signal',
+      };
+      alertIds.push(alertDocument['kibana.alert.uuid']);
+
+      if (isUpdate) {
+        // Case 2: Update an existing, active alert
+        console.log(
+          `[AlertsClient] Found existing, non-recovered alert. Preparing to UPDATE.`,
+          existing
+        );
+        return [
+          { update: { _index: this.indexTemplateAndPattern.alias, _id: existing._id } },
+          { doc: alertDocument },
+        ];
+      } else {
+        // Case 3: Create a new alert (it's brand new or replacing a recovered one)
+        if (existing) {
+          console.log(
+            `[AlertsClient] Found existing but RECOVERED alert. New event is ACTIVE. Preparing to CREATE NEW alert with new UUID.`,
+            existing
+          );
+        } else {
+          console.log(`[AlertsClient] No existing alert found. Preparing to CREATE NEW alert.`);
+        }
+        return [
+          { index: { _index: this.indexTemplateAndPattern.alias, _id: alertId } },
+          alertDocument,
+        ];
+      }
+    });
+
+    if (bulkBody.length === 0) {
+      console.log('[AlertsClient] No alerts to persist.');
+      return alertIds;
+    }
+
+    try {
+      // console.log(
+      //   '[AlertsClient] Executing bulk request with body:',
+      //   JSON.stringify(bulkBody, null, 2)
+      // );
+      const response = await esClient.bulk({
+        body: bulkBody,
+        require_alias: !this.isUsingDataStreams(),
+        refresh: this.isServerless ? true : 'wait_for',
+      });
+      console.log('[AlertsClient] Bulk request successful.');
+      console.log('response:', JSON.stringify(response, null, 2));
+
+      if (response.errors) {
+        const firstError = response.items.find((item) => (item.index || item.update)?.error)?.index
+          ?.error;
+        console.error(
+          '[AlertsClient] Bulk indexing of external alerts had errors:',
+          JSON.stringify(response, null, 2)
+        );
+        throw new Error(
+          `Bulk indexing of external alerts failed: ${firstError?.reason || 'Unknown error'}`
+        );
+      }
+
+      return alertIds;
+    } catch (err) {
+      console.error(
+        `[AlertsClient] Error writing ${events.length} external alerts to ${this.indexTemplateAndPattern.alias}:`,
+        err
+      );
+      this.options.logger.error(
+        `Error writing ${events.length} external alerts to ${this.indexTemplateAndPattern.alias} ${this.ruleInfoMessage} - ${err.message}`,
+        this.logTags
+      );
+      throw err;
     }
   }
 

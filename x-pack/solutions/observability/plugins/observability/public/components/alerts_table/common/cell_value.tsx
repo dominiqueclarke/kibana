@@ -4,10 +4,11 @@
  * 2.0; you may not use this file except in compliance with the Elastic License
  * 2.0.
  */
-import { EuiLink, EuiText, EuiFlexGroup } from '@elastic/eui';
+import { EuiLink, EuiText, EuiFlexGroup, EuiIcon, EuiFlexItem } from '@elastic/eui';
 import type { ReactNode } from 'react';
 import React from 'react';
 import {
+  ALERT_SOURCE,
   ALERT_DURATION,
   ALERT_SEVERITY,
   ALERT_STATUS,
@@ -43,6 +44,8 @@ import { TimestampTooltip } from './timestamp_tooltip';
 import type { GetObservabilityAlertsTableProp } from '../types';
 import AlertActions from '../../alert_actions/alert_actions';
 import { ElapsedTimestampTooltip } from '../../../../common';
+import datadogIcon from '../../../assets/icons/datadog.svg';
+import sentryIcon from '../../../assets/icons/sentry.svg';
 
 export const getAlertFieldValue = (alert: Alert, fieldName: string) => {
   // can be updated when working on https://github.com/elastic/kibana/issues/140819
@@ -91,6 +94,34 @@ export const AlertsTableCellValue: GetObservabilityAlertsTableProp<'renderCellVa
         return null;
       }
       return <AlertStatusIndicator alertStatus={value} />;
+    },
+    [ALERT_SOURCE]: (value) => {
+      const source = value?.toLowerCase() || 'kibana';
+      let icon: React.ReactNode;
+      switch (source) {
+        case 'datadog':
+          icon = <EuiIcon type={datadogIcon} />;
+          break;
+        case 'sentry':
+          icon = <EuiIcon type={sentryIcon} />;
+          break;
+        case 'prometheus':
+          icon = <EuiIcon type="logoPrometheus" />;
+          break;
+        case 'kibana':
+          icon = <EuiIcon type="logoKibana" />;
+          break;
+        default:
+          icon = <EuiIcon type="logoKibana" />;
+      }
+      return (
+        <EuiFlexGroup gutterSize="s" alignItems="center" responsive={false}>
+          <EuiFlexItem grow={false}>{icon}</EuiFlexItem>
+          <EuiFlexItem grow={false}>
+            <EuiText size="s">{value === '--' ? 'Kibana' : value}</EuiText>
+          </EuiFlexItem>
+        </EuiFlexGroup>
+      );
     },
     [TIMESTAMP]: (value) => (
       <TimestampTooltip time={new Date(value ?? '').getTime()} timeUnit="milliseconds" />

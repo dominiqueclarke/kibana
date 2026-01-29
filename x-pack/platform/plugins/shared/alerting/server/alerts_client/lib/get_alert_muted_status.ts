@@ -8,7 +8,7 @@
 import type { AlertRuleData } from '../types';
 
 export function getAlertMutedStatus(alertInstanceId: string, ruleData?: AlertRuleData): boolean {
-  if (!ruleData) {
+  if (!ruleData || !ruleData.mutedInstanceIds) {
     return false;
   }
 

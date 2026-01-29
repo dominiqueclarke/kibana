@@ -5,6 +5,7 @@
  * 2.0.
  */
 
+import type { PluginSetup as DataSetup, PluginStart as DataStart } from '@kbn/data-plugin/server';
 import type { AlertingServerSetup, AlertingServerStart } from '@kbn/alerting-plugin/server';
 import type { ContentManagementServerSetup } from '@kbn/content-management-plugin/server';
 import type { DashboardPluginStart } from '@kbn/dashboard-plugin/server';
@@ -51,6 +52,8 @@ import { getCasesFeature } from './features/cases_v1';
 import { getCasesFeatureV2 } from './features/cases_v2';
 import { getCasesFeatureV3 } from './features/cases_v3';
 import { setEsqlRecommendedQueries } from './lib/esql_extensions/set_esql_recommended_queries';
+import { unifiedAlertsSearchStrategyProvider } from './search_strategy/unified_search_strategy';
+import { UNIFIED_ALERTS_SEARCH_STRATEGY } from '../common/constants';
 
 export type ObservabilityPluginSetup = ReturnType<ObservabilityPlugin['setup']>;
 
@@ -65,6 +68,7 @@ interface PluginSetup {
   cloud?: CloudSetup;
   contentManagement: ContentManagementServerSetup;
   esql: ESQLSetup;
+  data: DataSetup;
 }
 
 interface PluginStart {
@@ -73,6 +77,7 @@ interface PluginStart {
   dataViews: DataViewsServerPluginStart;
   ruleRegistry: RuleRegistryPluginStartContract;
   dashboard: DashboardPluginStart;
+  data: DataStart;
 }
 export class ObservabilityPlugin
   implements Plugin<ObservabilityPluginSetup, void, PluginSetup, PluginStart>
@@ -123,6 +128,11 @@ export class ObservabilityPlugin
     void core.getStartServices().then(([coreStart, pluginStart]) => {
       const isCompleteOverviewEnabled = coreStart.pricing.isFeatureAvailable(
         'observability:complete_overview'
+      );
+
+      plugins.data.search.registerSearchStrategy(
+        UNIFIED_ALERTS_SEARCH_STRATEGY,
+        unifiedAlertsSearchStrategyProvider(pluginStart.data)
       );
 
       if (config.annotations.enabled && isCompleteOverviewEnabled) {

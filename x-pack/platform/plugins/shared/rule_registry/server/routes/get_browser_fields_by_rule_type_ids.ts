@@ -51,7 +51,10 @@ export const getBrowserFieldsByFeatureId = (router: IRouter<RacRequestHandlerCon
             ? await alertsClient.getAuthorizedAlertsIndices(onlyO11yRuleTypeIds)
             : []) ?? [];
 
-        if (o11yIndices.length === 0) {
+        // Always include the external alerts index to ensure its fields are available
+        const allIndices = [...new Set([...o11yIndices, '.alerts-external*'])];
+
+        if (allIndices.length === 0) {
           return response.notFound({
             body: {
               message: `No alerts-observability indices found for rule type ids [${onlyO11yRuleTypeIds}]`,
@@ -70,7 +73,7 @@ export const getBrowserFieldsByFeatureId = (router: IRouter<RacRequestHandlerCon
         };
 
         const fields = await alertsClient.getBrowserFields({
-          indices: o11yIndices,
+          indices: allIndices,
           ruleTypeIds: onlyO11yRuleTypeIds,
           metaFields: ['_id', '_index'],
           allowNoIndex: true,

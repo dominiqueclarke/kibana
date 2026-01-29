@@ -91,6 +91,7 @@ const ALERT_EVALUATION_THRESHOLD = `${ALERT_NAMESPACE}.evaluation.threshold` as 
 const ALERT_EVALUATION_VALUE = `${ALERT_NAMESPACE}.evaluation.value` as const;
 const ALERT_CONTEXT = `${ALERT_NAMESPACE}.context` as const;
 const ALERT_EVALUATION_VALUES = `${ALERT_NAMESPACE}.evaluation.values` as const;
+const ALERT_SOURCE = `${ALERT_NAMESPACE}.source` as const;
 const ALERT_GROUPING = `${ALERT_NAMESPACE}.grouping` as const;
 const ALERT_GROUP = `${ALERT_NAMESPACE}.group` as const;
 const ALERT_GROUP_FIELD = `${ALERT_GROUP}.field` as const;
@@ -177,6 +178,7 @@ const fields = {
   ALERT_START,
   ALERT_TIME_RANGE,
   ALERT_SEVERITY,
+  ALERT_SOURCE,
   ALERT_STATUS,
   ALERT_SYSTEM_STATUS,
   ALERT_UUID,
@@ -211,6 +213,7 @@ export {
   ALERT_BUILDING_BLOCK_TYPE,
   ALERT_EVALUATION_THRESHOLD,
   ALERT_EVALUATION_VALUE,
+  ALERT_SOURCE,
   ALERT_CONTEXT,
   ALERT_EVALUATION_VALUES,
   ALERT_GROUPING,

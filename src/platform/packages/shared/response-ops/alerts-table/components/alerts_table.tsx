@@ -84,7 +84,7 @@ const getCaseIdsFromAlerts = (alerts: Alert[]) => [
 ];
 
 const getRuleIdsFromAlerts = (alerts: Alert[]) => [
-  ...new Set(alerts.map((a) => a[ALERT_RULE_UUID]![0] as string)),
+  ...new Set(alerts.map((a) => a[ALERT_RULE_UUID]?.[0] as string).filter(Boolean)),
 ];
 
 const getMaintenanceWindowIdsFromAlerts = (alerts: Alert[]) => [
@@ -226,7 +226,7 @@ const AlertsTableContent = typedForwardRef(
     // Memoized so that consumers can pass an inline object without causing re-renders
     // eslint-disable-next-line react-hooks/exhaustive-deps
     const memoizedServices = useMemo(() => services, Object.values(services));
-    const { casesConfiguration, showInspectButton } = publicDataGridProps;
+    const { casesConfiguration, showInspectButton, searchStrategy, ...dataGridOnlyProps } = publicDataGridProps;
     const { data, cases: casesService, http, notifications, application, licensing } = services;
     const queryClient = useQueryClient({ context: AlertsQueryContext });
     const dataGridRef = useRef<EuiDataGridRefProps>(null);
@@ -369,6 +369,7 @@ const AlertsTableContent = typedForwardRef(
       pageSize,
       minScore,
       trackScores,
+      searchStrategy,
       dispatchBulkAction,
     });
 
