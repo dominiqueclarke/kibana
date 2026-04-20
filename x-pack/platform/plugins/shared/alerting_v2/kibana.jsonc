@@ -29,7 +29,7 @@
       "kibanaUtils",
       "share"
     ],
-    "optionalPlugins": ["usageCollection"],
+    "optionalPlugins": ["usageCollection", "alerting", "inference"],
     "requiredBundles": ["alerting", "kibanaReact"],
     "extraPublicDirs": []
   }

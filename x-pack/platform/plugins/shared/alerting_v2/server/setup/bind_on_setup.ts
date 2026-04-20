@@ -16,6 +16,8 @@ import { TaskDefinition } from '../lib/services/task_run_scope_service/create_ta
 import { registerSavedObjects } from '../saved_objects';
 import { dispatcherUiSettings } from '../lib/dispatcher/ui_settings';
 import { EsServiceInternalToken } from '../lib/services/es_service/tokens';
+import { MigrationServiceToken } from '../lib/migration/tokens';
+import { MigrationService } from '../lib/migration/migration_service';
 
 export function bindOnSetup({ bind }: ContainerModuleLoadOptions) {
   bind(OnSetup).toConstantValue((container) => {
@@ -60,5 +62,16 @@ export function bindOnSetup({ bind }: ContainerModuleLoadOptions) {
       registerAlertingV2UsageCollector(getTaskManagerStart, usageCollection);
       registerTelemetryTask(logger, taskManager, getEsClient);
     }
+
+    container.bind(MigrationServiceToken).toDynamicValue(() => {
+      const alertingToken =
+        PluginStart<NonNullable<AlertingServerStartDependencies['alerting']>>('alerting');
+      const inferenceToken =
+        PluginStart<NonNullable<AlertingServerStartDependencies['inference']>>('inference');
+
+      const alerting = container.get(alertingToken);
+      const inference = container.get(inferenceToken);
+      return new MigrationService(alerting, inference, logger);
+    }).inSingletonScope();
   });
 }

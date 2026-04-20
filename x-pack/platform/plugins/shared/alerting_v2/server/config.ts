@@ -18,6 +18,9 @@ export const configSchema = schema.object({
   ui: schema.object({
     enabled: schema.boolean({ defaultValue: false }),
   }),
+  migration: schema.object({
+    enabled: schema.boolean({ defaultValue: false }),
+  }),
 });
 
 export type PluginConfig = TypeOf<typeof configSchema>;

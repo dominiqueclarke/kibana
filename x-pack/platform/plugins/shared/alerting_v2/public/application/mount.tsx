@@ -31,6 +31,7 @@ import { I18nProvider } from '@kbn/i18n-react';
 import { RulesApp } from './rules_app';
 import { NotificationPoliciesApp } from './notification_policies_app';
 import { EpisodesApp } from './episodes_app';
+import { MigrationApp } from './migration_app';
 import { BreadcrumbProvider } from './breadcrumb_context';
 import type { AlertEpisodesKibanaServices } from '../episodes_kibana_services';
 
@@ -158,6 +159,39 @@ export const mountNotificationPoliciesApp = async ({
             <I18nProvider>
               <Router history={history}>
                 <NotificationPoliciesApp />
+              </Router>
+            </I18nProvider>
+          </BreadcrumbProvider>
+        </QueryClientProvider>
+      </Context.Provider>
+    ),
+    element
+  );
+
+  return () => ReactDOM.unmountComponentAtNode(element);
+};
+
+export const mountMigrationApp = async ({
+  params,
+  container,
+  coreStart,
+}: {
+  params: AlertingV2MountParams;
+  container: Container;
+  coreStart: CoreStart;
+}): Promise<AppUnmount> => {
+  const { element, history, setBreadcrumbs } = params;
+
+  const queryClient = new QueryClient();
+
+  ReactDOM.render(
+    coreStart.rendering.addContext(
+      <Context.Provider value={container}>
+        <QueryClientProvider client={queryClient}>
+          <BreadcrumbProvider setBreadcrumbs={setBreadcrumbs}>
+            <I18nProvider>
+              <Router history={history}>
+                <MigrationApp />
               </Router>
             </I18nProvider>
           </BreadcrumbProvider>

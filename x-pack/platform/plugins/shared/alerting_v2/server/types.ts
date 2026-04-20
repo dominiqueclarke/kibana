@@ -20,6 +20,8 @@ import type {
 } from '@kbn/encrypted-saved-objects-plugin/server';
 import type { WorkflowsServerPluginSetup } from '@kbn/workflows-management-plugin/server';
 import type { UsageCollectionSetup } from '@kbn/usage-collection-plugin/server';
+import type { AlertingServerStart as AlertingV1ServerStart } from '@kbn/alerting-plugin/server';
+import type { InferenceServerStart } from '@kbn/inference-plugin/server';
 
 export type AlertingServerSetup = void;
 export type AlertingServerStart = void;
@@ -40,4 +42,6 @@ export interface AlertingServerStartDependencies {
   data: DataPluginStart;
   security: SecurityPluginStart;
   encryptedSavedObjects: EncryptedSavedObjectsPluginStart;
+  alerting?: AlertingV1ServerStart;
+  inference?: InferenceServerStart;
 }

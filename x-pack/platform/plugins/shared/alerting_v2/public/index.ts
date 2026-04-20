@@ -20,6 +20,7 @@ import {
   ALERTING_V2_RULES_APP_ID,
   ALERTING_V2_NOTIFICATION_POLICIES_APP_ID,
   ALERTING_V2_EPISODES_APP_ID,
+  ALERTING_V2_MIGRATION_APP_ID,
 } from './constants';
 import { NotificationPoliciesApi } from './services/notification_policies_api';
 import { RulesApi } from './services/rules_api';
@@ -103,6 +104,23 @@ export const module = new ContainerModule(({ bind }) => {
         const [coreStart] = await getStartServices();
         const { mountNotificationPoliciesApp } = await import('./application/mount');
         return mountNotificationPoliciesApp({
+          params,
+          container: coreStart.injection.getContainer(),
+          coreStart,
+        });
+      },
+    });
+
+    alertingV2Section.registerApp({
+      id: ALERTING_V2_MIGRATION_APP_ID,
+      title: i18n.translate('xpack.alertingV2.management.migrationNavTitle', {
+        defaultMessage: 'Migration',
+      }),
+      order: 4,
+      async mount(params) {
+        const [coreStart] = await getStartServices();
+        const { mountMigrationApp } = await import('./application/mount');
+        return mountMigrationApp({
           params,
           container: coreStart.injection.getContainer(),
           coreStart,
