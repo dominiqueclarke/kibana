@@ -1,8 +1,9 @@
 pageLoadAssetSize:
   actions: 20000
   advancedSettings: 6196
-  agentBuilder: 45717
+  agentBuilder: 48000
   agentBuilderPlatform: 8886
+  agentContextLayer: 1883
   aiAssistantManagementSelection: 13590
   aiops: 15227
   alerting: 22371
@@ -32,7 +33,7 @@ pageLoadAssetSize:
   crossClusterReplication: 12662
   customIntegrations: 11715
   dashboard: 20000
-  dashboardAgent: 5135
+  dashboardAgent: 7786
   dashboardMarkdown: 6151
   data: 496646
   dataQuality: 11469
@@ -46,13 +47,13 @@ pageLoadAssetSize:
   dataVisualizer: 32727
   developerToolbar: 4467
   devTools: 8109
-  discover: 28240
+  discover: 30501
   discoverEnhanced: 5509
   discoverShared: 2322
-  elasticAssistant: 301540
+  elasticAssistant: 299886
   elasticAssistantSharedState: 4881
   elasticConsole: 4451
-  embeddable: 16634
+  embeddable: 19587
   embeddableAlertsTable: 6524
   enterpriseSearch: 37565
   entityStore: 9718
@@ -72,14 +73,14 @@ pageLoadAssetSize:
   expressionTagcloud: 14009
   expressionXY: 45000
   features: 4145
-  feedback: 7000
+  feedback: 6248
   fieldFormats: 64634
   fieldsMetadata: 4901
   files: 6037
   filesManagement: 5208
   fileUpload: 22957
   fleet: 209495
-  genAiSettings: 5663
+  genAiSettings: 6342
   globalSearch: 6890
   globalSearchBar: 26122
   globalSearchProviders: 4646
@@ -104,7 +105,7 @@ pageLoadAssetSize:
   kibanaUtils: 54161
   kql: 15428
   kubernetesSecurity: 6807
-  lens: 85000
+  lens: 90000
   licenseManagement: 8265
   licensing: 10073
   links: 8620
@@ -117,7 +118,7 @@ pageLoadAssetSize:
   maps: 45917
   mapsEms: 6734
   metricsDataAccess: 44950
-  ml: 89000
+  ml: 99842
   mockIdpPlugin: 7463
   monitoring: 28983
   navigation: 11814
@@ -125,7 +126,7 @@ pageLoadAssetSize:
   noDataPage: 1749
   observability: 107797
   observabilityAgentBuilder: 10178
-  observabilityAIAssistant: 61180
+  observabilityAIAssistant: 67295
   observabilityAIAssistantApp: 17100
   observabilityAiAssistantManagement: 7126
   observabilityLogsExplorer: 4918
@@ -156,23 +157,23 @@ pageLoadAssetSize:
   searchGettingStarted: 6678
   searchHomepage: 9005
   searchIndices: 9991
-  searchInferenceEndpoints: 9400
-  searchNavigation: 8308
+  searchInferenceEndpoints: 9765
+  searchNavigation: 8900
   searchNotebooks: 18826
   searchPlayground: 12122
   searchprofiler: 6509
   searchQueryRules: 6689
   searchSynonyms: 6371
   security: 79627
-  securitySolution: 135301
+  securitySolution: 171101
   securitySolutionEss: 38689
   securitySolutionServerless: 52082
   serverless: 7412
   serverlessObservability: 19104
   serverlessSearch: 26287
-  serverlessWorkplaceAI: 5078
+  serverlessWorkplaceAI: 4855
   sessionView: 47912
-  share: 58677
+  share: 64066
   slo: 40437
   snapshotRestore: 22068
   spaces: 28871
@@ -212,5 +213,5 @@ pageLoadAssetSize:
   visualizations: 52210
   watcher: 10485
   workflowsExtensions: 38894
-  workflowsManagement: 31215
+  workflowsManagement: 35010
   workplaceAIApp: 14056
