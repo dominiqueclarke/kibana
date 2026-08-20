@@ -138,6 +138,25 @@ describe('getEpisodeHeaderMenu', () => {
     });
   });
 
+  it('overflows add to chat like other non-lifecycle actions', () => {
+    const actions = [
+      createAction({ id: 'ALERTING_V2_ACK_EPISODE', order: 10 }),
+      createAction({ id: 'ALERTING_V2_ADD_EPISODE_TO_CHAT', order: 60 }),
+    ];
+
+    const menu = getEpisodeHeaderMenu({
+      actions,
+      episode: mockEpisode,
+      onSuccess: jest.fn(),
+    });
+
+    expect(menu.items?.[1]).toMatchObject({
+      id: 'ALERTING_V2_ADD_EPISODE_TO_CHAT',
+      overflow: true,
+      testId: 'episodeActionsBar-overflow-ALERTING_V2_ADD_EPISODE_TO_CHAT',
+    });
+  });
+
   it('invokes execute for the primary action item', async () => {
     const execute = jest.fn(async () => {});
     const onSuccess = jest.fn();

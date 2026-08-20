@@ -33,7 +33,7 @@ const buildActions = () =>
   });
 
 describe('createEpisodeActions', () => {
-  it('returns all 9 actions sorted by order asc', () => {
+  it('returns all 10 actions sorted by order asc', () => {
     const actions = buildActions();
     expect(actions.map((a) => a.id)).toEqual([
       'ALERTING_V2_ACK_EPISODE',
@@ -45,13 +45,17 @@ describe('createEpisodeActions', () => {
       'ALERTING_V2_EDIT_EPISODE_TAGS',
       'ALERTING_V2_EDIT_EPISODE_ASSIGNEE',
       'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER',
+      'ALERTING_V2_ADD_EPISODE_TO_CHAT',
     ]);
   });
 });
 
 describe('READ_SAFE_EPISODE_ACTION_IDS', () => {
-  it('contains exactly the non-mutating (navigation-only) episode actions', () => {
-    expect([...READ_SAFE_EPISODE_ACTION_IDS]).toEqual(['ALERTING_V2_OPEN_EPISODE_IN_DISCOVER']);
+  it('contains exactly the non-mutating episode actions', () => {
+    expect([...READ_SAFE_EPISODE_ACTION_IDS]).toEqual([
+      'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER',
+      'ALERTING_V2_ADD_EPISODE_TO_CHAT',
+    ]);
   });
 
   it('is a subset of the ids produced by createEpisodeActions', () => {

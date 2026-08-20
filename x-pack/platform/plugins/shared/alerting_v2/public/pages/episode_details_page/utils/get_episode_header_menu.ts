@@ -19,6 +19,7 @@ const SECONDARY_ACTION_IDS = new Set([
   'ALERTING_V2_UNRESOLVE_EPISODE',
   'ALERTING_V2_EDIT_EPISODE_TAGS',
   'ALERTING_V2_EDIT_EPISODE_ASSIGNEE',
+  'ALERTING_V2_ADD_EPISODE_TO_CHAT',
 ]);
 
 // Rendered as the app menu's dedicated primaryActionItem, which always sits to the far right of

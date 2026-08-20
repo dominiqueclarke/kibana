@@ -37,7 +37,9 @@ import { css } from '@emotion/react';
 import deepEqual from 'fast-deep-equal';
 import { useQueryClient } from '@kbn/react-query';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
+import { PluginStart } from '@kbn/core-di';
 import { useService } from '@kbn/core-di-browser';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
 import { useFetchAlertingEpisodesQuery } from '@kbn/alerting-v2-episodes-ui/hooks/use_fetch_alerting_episodes_query';
 import { ALERT_EPISODES_LIST_PAGE_SIZE } from '@kbn/alerting-v2-episodes-ui/constants';
 import { useInvalidateEpisodeQueries } from '@kbn/alerting-v2-episodes-ui/hooks/use_invalidate_episode_queries';
@@ -53,6 +55,10 @@ import {
   EpisodeSeverityCell,
 } from '@kbn/alerting-v2-episodes-ui/components/episodes_table_cell_renderers';
 import { AlertEpisodeAssigneeCell } from '@kbn/alerting-v2-episodes-ui/components/assignee_cell';
+import { EpisodeAddToChatButton } from '../../agent_builder/episode_add_to_chat_button';
+import { addItemsToChat } from '../../agent_builder/add_items_to_chat';
+import { episodeAttachmentConverter } from '../../agent_builder/episode_auto_attach';
+import { toFocusedEpisode } from '../../agent_builder/to_focused_episode';
 import { DEFAULT_EPISODES_TABLE_SORT } from './utils/episodes_table_config';
 import { useEpisodesTableConfig } from './hooks/use_episodes_table_config';
 import { experimentalBadge } from '../../components/experimental_badge';
@@ -132,6 +138,10 @@ export const AlertEpisodesListPage = () => {
   const alertsCapability = useService(UserCapabilities).canWrite('alerts')
     ? EPISODE_ACTIONS_PRIVILEGE.all
     : EPISODE_ACTIONS_PRIVILEGE.read;
+  const agentBuilder = useService(PluginStart('agentBuilder'), { optional: true }) as
+    | AgentBuilderPluginStart
+    | undefined;
+  const openChat = agentBuilder?.openChat;
   const invalidateEpisodeQueries = useInvalidateEpisodeQueries();
   const { euiTheme } = useEuiTheme();
   const timefilter = services.data.query.timefilter.timefilter;
@@ -303,10 +313,20 @@ export const AlertEpisodesListPage = () => {
                 : undefined,
               episodeIsoTimestamp,
             }),
+          addToChat: openChat
+            ? (episodes) =>
+                addItemsToChat(
+                  openChat,
+                  episodes.map((episode) =>
+                    toFocusedEpisode(episode, rulesCache[episode['rule.id']])
+                  ),
+                  episodeAttachmentConverter
+                )
+            : undefined,
         }),
         alertsCapability
       ),
-    [services, queryClient, rulesCache, alertsCapability]
+    [services, queryClient, rulesCache, alertsCapability, openChat]
   );
 
   const renderDocumentView = useCallback<RenderDocumentViewCallback>(
@@ -316,6 +336,13 @@ export const AlertEpisodesListPage = () => {
         groupHash={hit.flattened.group_hash as string | undefined}
         onClose={closeFlyout}
         actions={episodeActions}
+        renderFooterExtra={({ episode, ruleName, groupingFields }) => (
+          <EpisodeAddToChatButton
+            episode={episode}
+            ruleName={ruleName}
+            groupingFields={groupingFields}
+          />
+        )}
         services={{
           data: services.data,
           http: services.http,

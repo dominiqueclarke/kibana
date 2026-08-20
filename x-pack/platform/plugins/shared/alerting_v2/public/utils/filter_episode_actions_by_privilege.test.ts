@@ -22,27 +22,28 @@ const makeAction = (id: string): EpisodeAction => ({
 
 const ackAction = makeAction('ALERTING_V2_ACK_EPISODE');
 const discoverAction = makeAction('ALERTING_V2_OPEN_EPISODE_IN_DISCOVER');
+const addToChatAction = makeAction('ALERTING_V2_ADD_EPISODE_TO_CHAT');
 
 describe('filterEpisodeActionsByPrivilege', () => {
   it('returns every action for the "all" capability', () => {
-    const actions = [ackAction, discoverAction];
+    const actions = [ackAction, discoverAction, addToChatAction];
     expect(filterEpisodeActionsByPrivilege(actions, EPISODE_ACTIONS_PRIVILEGE.all)).toBe(actions);
   });
 
   it('keeps only read-safe actions for the "read" capability', () => {
     const result = filterEpisodeActionsByPrivilege(
-      [ackAction, discoverAction],
+      [ackAction, discoverAction, addToChatAction],
       EPISODE_ACTIONS_PRIVILEGE.read
     );
-    expect(result).toEqual([discoverAction]);
+    expect(result).toEqual([discoverAction, addToChatAction]);
   });
 
   it('hides actions that are not explicitly read-safe by default', () => {
     const unknownMutatingAction = makeAction('ALERTING_V2_SOME_FUTURE_MUTATION');
     const result = filterEpisodeActionsByPrivilege(
-      [unknownMutatingAction, discoverAction],
+      [unknownMutatingAction, discoverAction, addToChatAction],
       EPISODE_ACTIONS_PRIVILEGE.read
     );
-    expect(result).toEqual([discoverAction]);
+    expect(result).toEqual([discoverAction, addToChatAction]);
   });
 });

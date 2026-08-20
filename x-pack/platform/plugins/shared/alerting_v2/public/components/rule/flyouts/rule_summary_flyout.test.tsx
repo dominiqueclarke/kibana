@@ -10,6 +10,7 @@ import { render, screen, fireEvent } from '@testing-library/react';
 import { I18nProvider } from '@kbn/i18n-react';
 import { RuleSummaryFlyout } from './rule_summary_flyout';
 import type { RuleApiResponse } from '../../../services/rules_api';
+import { useRuleAutoAttach } from '../../../agent_builder/use_rule_auto_attach';
 
 jest.mock('@kbn/core-di-browser', () => ({
   useService: (token: unknown) => {
@@ -19,6 +20,10 @@ jest.mock('@kbn/core-di-browser', () => ({
     return {};
   },
   CoreStart: (key: string) => key,
+}));
+
+jest.mock('../../../agent_builder/use_rule_auto_attach', () => ({
+  useRuleAutoAttach: jest.fn(),
 }));
 
 jest.mock('../../../pages/rules_list_page/rule_actions_menu', () => ({
@@ -81,6 +86,8 @@ const baseRule = {
   enabled: true,
   metadata: { name: 'My Rule' },
 } as RuleApiResponse;
+
+const mockUseRuleAutoAttach = jest.mocked(useRuleAutoAttach);
 
 const renderFlyout = (overrides: Partial<React.ComponentProps<typeof RuleSummaryFlyout>> = {}) => {
   const props = {
@@ -212,5 +219,13 @@ describe('RuleSummaryFlyout', () => {
     renderFlyout();
 
     expect(screen.queryByTestId('mockUpdateApiKey')).not.toBeInTheDocument();
+  });
+
+  describe('Agent Builder auto-attach', () => {
+    it('passes the rule to useRuleAutoAttach', () => {
+      renderFlyout();
+
+      expect(mockUseRuleAutoAttach).toHaveBeenCalledWith(baseRule);
+    });
   });
 });

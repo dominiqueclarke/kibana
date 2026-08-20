@@ -17,3 +17,4 @@ export { createUnresolveAction } from './unresolve';
 export { createEditTagsAction } from './edit_tags';
 export { createEditAssigneeAction } from './edit_assignee';
 export { createOpenInDiscoverAction, OPEN_IN_DISCOVER_EPISODE_ACTION_ID } from './open_in_discover';
+export { createAddToChatAction, ADD_TO_CHAT_EPISODE_ACTION_ID } from './add_to_chat';

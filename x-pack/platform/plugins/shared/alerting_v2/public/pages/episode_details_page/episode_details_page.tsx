@@ -24,7 +24,9 @@ import {
 } from '@elastic/eui';
 import { AppHeader } from '@kbn/app-header';
 import { useQueryClient } from '@kbn/react-query';
+import { PluginStart } from '@kbn/core-di';
 import { useService } from '@kbn/core-di-browser';
+import type { AgentBuilderPluginStart } from '@kbn/agent-builder-plugin/public';
 import { getBreachEsqlQuery } from '@kbn/alerting-v2-schemas';
 import { parseEpisodeDataJson } from '@kbn/alerting-v2-utils';
 import { useKibana } from '@kbn/kibana-react-plugin/public';
@@ -52,6 +54,8 @@ import type { AlertEpisodesKibanaServices } from '../../episodes_kibana_services
 import { useBreadcrumbs } from '../../hooks/use_breadcrumbs';
 import { UserCapabilities } from '../../services/user_capabilities';
 import { useEpisodeAutoAttach } from '../../agent_builder/use_episode_auto_attach';
+import { addItemsToChat } from '../../agent_builder/add_items_to_chat';
+import { episodeAttachmentConverter } from '../../agent_builder/episode_auto_attach';
 import { getDiscoverHrefForRuleAndEpisodeTimestamp } from '../../utils/discover_href_for_episode';
 import {
   filterEpisodeActionsByPrivilege,
@@ -84,6 +88,10 @@ export function EpisodeDetailsPage() {
   const alertsCapability = useService(UserCapabilities).canWrite('alerts')
     ? EPISODE_ACTIONS_PRIVILEGE.all
     : EPISODE_ACTIONS_PRIVILEGE.read;
+  const agentBuilder = useService(PluginStart('agentBuilder'), { optional: true }) as
+    | AgentBuilderPluginStart
+    | undefined;
+  const openChat = agentBuilder?.openChat;
   const { data, http, spaces } = services;
   const history = useHistory();
 
@@ -203,10 +211,31 @@ export function EpisodeDetailsPage() {
               ruleEsql: showRuleDependentUi ? getBreachEsqlQuery(ruleState.rule.query) : undefined,
               episodeIsoTimestamp: ts,
             }),
+          addToChat: openChat
+            ? (episodes) =>
+                addItemsToChat(
+                  openChat,
+                  episodes.map((selectedEpisode) => ({
+                    episode: selectedEpisode,
+                    ruleName: episodeRuleName,
+                    groupingFields,
+                  })),
+                  episodeAttachmentConverter
+                )
+            : undefined,
         }),
         alertsCapability
       ),
-    [services, queryClient, showRuleDependentUi, ruleState, alertsCapability]
+    [
+      services,
+      queryClient,
+      showRuleDependentUi,
+      ruleState,
+      alertsCapability,
+      openChat,
+      episodeRuleName,
+      groupingFields,
+    ]
   );
 
   const applicableActions = useMemo(

@@ -27,6 +27,7 @@ import {
 } from '@kbn/alerting-v2-episodes-ui/actions';
 
 const OPEN_IN_DISCOVER_EPISODE_ACTION_ID = 'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER';
+const ADD_TO_CHAT_EPISODE_ACTION_ID = 'ALERTING_V2_ADD_EPISODE_TO_CHAT';
 
 const WRITE_CAPABILITIES = { alerting_v2_alerts: { read: true, all: true } };
 const READ_ONLY_CAPABILITIES = { alerting_v2_alerts: { read: true, all: false } };
@@ -74,7 +75,10 @@ jest.mock('@kbn/alerting-v2-episodes-ui/hooks/use_episodes_kpis_query');
 
 jest.mock('@kbn/alerting-v2-episodes-ui/actions', () => ({
   createEpisodeActions: jest.fn(() => []),
-  READ_SAFE_EPISODE_ACTION_IDS: new Set(['ALERTING_V2_OPEN_EPISODE_IN_DISCOVER']),
+  READ_SAFE_EPISODE_ACTION_IDS: new Set([
+    'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER',
+    'ALERTING_V2_ADD_EPISODE_TO_CHAT',
+  ]),
 }));
 
 jest.mock('@kbn/alerting-v2-episodes-ui/components/details/details_flyout', () => ({
@@ -480,6 +484,14 @@ describe('privilege gating', () => {
     isCompatible: () => true,
     execute: jest.fn(async () => {}),
   };
+  const addToChatAction = {
+    id: ADD_TO_CHAT_EPISODE_ACTION_ID,
+    order: 60,
+    displayName: 'Add to chat',
+    iconType: 'productAgent',
+    isCompatible: () => true,
+    execute: jest.fn(async () => {}),
+  };
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -487,7 +499,7 @@ describe('privilege gating', () => {
     jest.mocked(fetchAlertingEpisodes).mockResolvedValue(mockEpisodes as any);
     mockHttp.post.mockResolvedValue({ rules: [] });
     mockedUseEpisodesKpisQuery.mockImplementation(defaultKpisImpl);
-    mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction]);
+    mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction, addToChatAction]);
   });
 
   const getRowControlIds = (): string[] => {
@@ -510,10 +522,12 @@ describe('privilege gating', () => {
     expect(getRowControlIds()).toEqual([
       'ALERTING_V2_ACK_EPISODE',
       OPEN_IN_DISCOVER_EPISODE_ACTION_ID,
+      ADD_TO_CHAT_EPISODE_ACTION_ID,
     ]);
     expect(getCapturedBulkActions().map((action) => action.key)).toEqual([
       'ALERTING_V2_ACK_EPISODE',
       OPEN_IN_DISCOVER_EPISODE_ACTION_ID,
+      ADD_TO_CHAT_EPISODE_ACTION_ID,
     ]);
   });
 
@@ -523,9 +537,13 @@ describe('privilege gating', () => {
     renderPage();
     await waitForRows();
 
-    expect(getRowControlIds()).toEqual([OPEN_IN_DISCOVER_EPISODE_ACTION_ID]);
+    expect(getRowControlIds()).toEqual([
+      OPEN_IN_DISCOVER_EPISODE_ACTION_ID,
+      ADD_TO_CHAT_EPISODE_ACTION_ID,
+    ]);
     expect(getCapturedBulkActions().map((action) => action.key)).toEqual([
       OPEN_IN_DISCOVER_EPISODE_ACTION_ID,
+      ADD_TO_CHAT_EPISODE_ACTION_ID,
     ]);
   });
 });

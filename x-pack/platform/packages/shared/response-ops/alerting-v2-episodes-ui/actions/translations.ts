@@ -53,6 +53,13 @@ export const OPEN_IN_DISCOVER = i18n.translate(
   }
 );
 
+export const ADD_TO_CHAT = i18n.translate(
+  'xpack.alertingV2.episodesUi.actions.addToChatButtonLabel',
+  {
+    defaultMessage: 'Add to chat',
+  }
+);
+
 export const TAGS_FLYOUT_TITLE = i18n.translate(
   'xpack.alertingV2.episodesUi.tagsAction.flyoutTitle',
   {

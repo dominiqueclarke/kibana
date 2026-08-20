@@ -23,6 +23,7 @@ import { i18n } from '@kbn/i18n';
 import React from 'react';
 import { useHistory } from 'react-router-dom';
 import { UserCapabilities } from '../../services/user_capabilities';
+import { useRuleAutoAttach } from '../../agent_builder/use_rule_auto_attach';
 import { useBreadcrumbs } from '../../hooks/use_breadcrumbs';
 import { useRuleAuditMetadata } from '../../hooks/use_rule_audit_metadata';
 import { useDeleteRule } from '../../hooks/use_delete_rule';
@@ -69,6 +70,7 @@ const getRuleDetailBadges = (rule: RuleApiResponse): AppHeaderBadge[] => {
 
 export const RuleDetailPage: React.FunctionComponent = () => {
   const rule = useRule();
+  useRuleAutoAttach(rule);
   useBreadcrumbs('rule_details', { ruleName: rule.metadata?.name });
   const { euiTheme } = useEuiTheme();
 

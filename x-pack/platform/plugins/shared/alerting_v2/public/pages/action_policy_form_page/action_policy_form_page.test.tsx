@@ -11,6 +11,7 @@ import userEvent from '@testing-library/user-event';
 import type { ActionPolicyResponse } from '@kbn/alerting-v2-schemas';
 import { I18nProvider } from '@kbn/i18n-react';
 import { ActionPolicyFormPage } from './action_policy_form_page';
+import { useActionPolicyAutoAttach } from '../../agent_builder/use_action_policy_auto_attach';
 
 const mockNavigateToUrl = jest.fn();
 const mockBasePath = { prepend: jest.fn((path: string) => `/mock${path}`) };
@@ -31,6 +32,10 @@ jest.mock('../../components/action_policy/form/components/matcher_input', () => 
 
 jest.mock('../../application/breadcrumb_context', () => ({
   useSetBreadcrumbs: () => jest.fn(),
+}));
+
+jest.mock('../../agent_builder/use_action_policy_auto_attach', () => ({
+  useActionPolicyAutoAttach: jest.fn(),
 }));
 
 jest.mock('@kbn/core-di-browser', () => ({
@@ -209,6 +214,8 @@ const EXISTING_POLICY: ActionPolicyResponse = {
   },
 };
 
+const mockUseActionPolicyAutoAttach = jest.mocked(useActionPolicyAutoAttach);
+
 const renderPage = () => {
   return render(
     <I18nProvider>
@@ -344,6 +351,12 @@ describe('ActionPolicyFormPage', () => {
 
       expect(mockNavigateToUrl).toHaveBeenCalledWith(expect.stringContaining('/action_policies'));
     });
+
+    it('passes undefined to useActionPolicyAutoAttach in create mode', () => {
+      renderPage();
+
+      expect(mockUseActionPolicyAutoAttach).toHaveBeenCalledWith(undefined);
+    });
   });
 
   describe('edit mode', () => {
@@ -443,6 +456,19 @@ describe('ActionPolicyFormPage', () => {
       await user.click(screen.getByTestId(TEST_SUBJ.cancelButton));
 
       expect(mockNavigateToUrl).toHaveBeenCalledWith(expect.stringContaining('/action_policies'));
+    });
+
+    it('passes the loaded action policy to useActionPolicyAutoAttach', () => {
+      mockUseFetchActionPolicy.mockReturnValue({
+        data: EXISTING_POLICY,
+        isLoading: false,
+        isError: false,
+        error: null,
+      });
+
+      renderPage();
+
+      expect(mockUseActionPolicyAutoAttach).toHaveBeenCalledWith(EXISTING_POLICY);
     });
   });
 });

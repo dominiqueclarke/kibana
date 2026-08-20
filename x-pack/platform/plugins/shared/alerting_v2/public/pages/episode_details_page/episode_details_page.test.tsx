@@ -25,6 +25,7 @@ import { useEpisodeAutoAttach } from '../../agent_builder/use_episode_auto_attac
 import { EpisodeDetailsPage } from './episode_details_page';
 
 const OPEN_IN_DISCOVER_EPISODE_ACTION_ID = 'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER';
+const ADD_TO_CHAT_EPISODE_ACTION_ID = 'ALERTING_V2_ADD_EPISODE_TO_CHAT';
 
 const WRITE_CAPABILITIES = { alerting_v2_alerts: { read: true, all: true } };
 const READ_ONLY_CAPABILITIES = { alerting_v2_alerts: { read: true, all: false } };
@@ -86,7 +87,10 @@ jest.mock('@kbn/alerting-v2-episodes-ui/hooks/use_episode_flapping', () => ({
 
 jest.mock('@kbn/alerting-v2-episodes-ui/actions', () => ({
   createEpisodeActions: jest.fn(),
-  READ_SAFE_EPISODE_ACTION_IDS: new Set(['ALERTING_V2_OPEN_EPISODE_IN_DISCOVER']),
+  READ_SAFE_EPISODE_ACTION_IDS: new Set([
+    'ALERTING_V2_OPEN_EPISODE_IN_DISCOVER',
+    'ALERTING_V2_ADD_EPISODE_TO_CHAT',
+  ]),
 }));
 
 // Sections that call useFetchEpisodeQuery independently are mocked to keep the
@@ -388,10 +392,18 @@ describe('EpisodeDetailsPage', () => {
       isCompatible: () => true,
       execute: jest.fn(async () => {}),
     };
+    const addToChatAction = {
+      id: ADD_TO_CHAT_EPISODE_ACTION_ID,
+      order: 60,
+      displayName: 'Add to chat',
+      iconType: 'productAgent',
+      isCompatible: () => true,
+      execute: jest.fn(async () => {}),
+    };
 
     it('renders mutating actions in the header menu when the user has write privilege', async () => {
       mockCapabilities = WRITE_CAPABILITIES;
-      mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction]);
+      mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction, addToChatAction]);
 
       renderPage();
 
@@ -403,18 +415,26 @@ describe('EpisodeDetailsPage', () => {
       expect(
         screen.getByTestId(`episodeActionsBar-primaryAction-${OPEN_IN_DISCOVER_EPISODE_ACTION_ID}`)
       ).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`episodeActionsBar-overflow-${ADD_TO_CHAT_EPISODE_ACTION_ID}`)
+      ).toBeInTheDocument();
     });
 
-    it('hides mutating actions and keeps Open in Discover when the user only has read privilege', async () => {
+    it('hides mutating actions and keeps Open in Discover and Add to chat when the user only has read privilege', async () => {
       mockCapabilities = READ_ONLY_CAPABILITIES;
-      mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction]);
+      mockCreateEpisodeActions.mockReturnValue([ackAction, discoverAction, addToChatAction]);
 
       renderPage();
+
+      await openAppMenuOverflow();
 
       expect(
         await screen.findByTestId(
           `episodeActionsBar-primaryAction-${OPEN_IN_DISCOVER_EPISODE_ACTION_ID}`
         )
+      ).toBeInTheDocument();
+      expect(
+        screen.getByTestId(`episodeActionsBar-overflow-${ADD_TO_CHAT_EPISODE_ACTION_ID}`)
       ).toBeInTheDocument();
       expect(
         screen.queryByTestId('episodeActionsBar-primary-ALERTING_V2_ACK_EPISODE')
