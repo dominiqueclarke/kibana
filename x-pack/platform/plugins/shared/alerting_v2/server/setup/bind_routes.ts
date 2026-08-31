@@ -69,6 +69,10 @@ import { GetRuleTemplateRoute } from '../routes/rule_templates/get_rule_template
  */
 
 import { ResetResourcesRoute } from '../routes/reset_resources_route';
+import { EsqlSpansRoute } from '../routes/span_perf/esql_spans_route';
+import { SearchAfterSpansRoute } from '../routes/span_perf/search_after_spans_route';
+import { TopZipSpansRoute } from '../routes/span_perf/top_zip_spans_route';
+import { ValuesZipSpansRoute } from '../routes/span_perf/values_zip_spans_route';
 
 export function bindRoutes({ bind }: ContainerModuleLoadOptions) {
   bind(Route).toConstantValue(CreateRuleRoute);
@@ -125,6 +129,10 @@ export function bindRoutes({ bind }: ContainerModuleLoadOptions) {
   bind(Route).toConstantValue(SuggestUserProfilesRoute);
   // TODO(rna-program#426): remove this binding before GA.
   bind(Route).toConstantValue(ResetResourcesRoute);
+  bind(Route).toConstantValue(SearchAfterSpansRoute);
+  bind(Route).toConstantValue(TopZipSpansRoute);
+  bind(Route).toConstantValue(EsqlSpansRoute);
+  bind(Route).toConstantValue(ValuesZipSpansRoute);
   bind(Route).toConstantValue(UpsertRuleRoute);
   bind(Route).toConstantValue(UpsertActionPolicyRoute);
   bind(Route).toConstantValue(MatchActionPoliciesForRuleRoute);

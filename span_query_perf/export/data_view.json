@@ -1,0 +1,10 @@
+{
+  "data_view": {
+    "id": "span-query-perf",
+    "name": "Span query perf",
+    "title": "span-query-perf",
+    "timeFieldName": "@timestamp",
+    "allowNoIndex": true
+  },
+  "override": true
+}

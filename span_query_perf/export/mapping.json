@@ -1,0 +1,75 @@
+{
+  "mappings": {
+    "properties": {
+      "@timestamp": {
+        "type": "date"
+      },
+      "docs": {
+        "type": "integer"
+      },
+      "duration_computed_in": {
+        "type": "keyword"
+      },
+      "episode_id": {
+        "type": "keyword"
+      },
+      "error_type": {
+        "type": "keyword"
+      },
+      "es_took_ms": {
+        "type": "float"
+      },
+      "es_wall_ms": {
+        "type": "float"
+      },
+      "events": {
+        "type": "integer"
+      },
+      "flaps": {
+        "type": "integer"
+      },
+      "kibana_ms": {
+        "type": "float"
+      },
+      "layer": {
+        "type": "keyword"
+      },
+      "method": {
+        "type": "keyword"
+      },
+      "pages": {
+        "type": "integer"
+      },
+      "pattern": {
+        "type": "keyword"
+      },
+      "result": {
+        "type": "keyword"
+      },
+      "run": {
+        "type": "keyword"
+      },
+      "spans": {
+        "type": "integer"
+      },
+      "succeeded": {
+        "type": "boolean"
+      },
+      "test_id": {
+        "type": "keyword"
+      },
+      "total_ms": {
+        "type": "float"
+      },
+      "wall_ms": {
+        "type": "float"
+      },
+      "window": {
+        "type": "keyword"
+      },
+      "window_minutes": {
+        "type": "integer"
+      }
+    }
+  }
+}

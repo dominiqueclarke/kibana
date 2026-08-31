@@ -1,0 +1,1039 @@
+{
+  "description": "Bench numbers for VALUES zip, TOP zip, and Kibana search_after span derivation from .rule-events.",
+  "options": {
+    "auto_apply_filters": true,
+    "hide_panel_titles": false,
+    "hide_panel_borders": false,
+    "use_margins": true,
+    "sync_colors": false,
+    "sync_tooltips": false,
+    "sync_cursor": true
+  },
+  "tags": [],
+  "time_range": {
+    "from": "now-7d",
+    "to": "now"
+  },
+  "title": "Episode span query perf",
+  "filters": [],
+  "panels": [
+    {
+      "grid": {
+        "x": 0,
+        "y": 0,
+        "w": 48,
+        "h": 20
+      },
+      "config": {
+        "title": "Pattern A / B and query methods",
+        "content": "Line charts plot **successful runs only**. A series that stops is a 429 (or missing size), not a speedup.\n\n**Filter:** use the `test_id` control (this dashboard is set to `2026-08-29-a10k`). The original ingest is `2026-08-29`.\n\n## What these series mean\n\nTwo axes: **data shape** (A vs B) and **algorithm** (VALUES zip / TOP zip / search_after).\n\n### Pattern A vs Pattern B\n\nSynthetic `.rule-events` for one `episode.id`, 1-minute rule interval.\n\n| | Pattern A | Pattern B |\n| --- | --- | --- |\n| Flap style | all-flip | longer runs |\n| `run_len` | 1 | typically 10 |\n| Relationship | flaps = docs | flaps \u2248 docs / 10 |\n| Example | 1000 docs \u2192 1000 spans | 1000 docs \u2192 ~100 spans |\n| Stresses | every row is a status change | same window, fewer spans |\n\nSame `docs` = same 1m-rule window. A is worst-case flapping; B is closer to real episodes with stable runs.\n\n### VALUES zip vs TOP zip vs search_after\n\nHow spans are derived (not different data).\n\n| Method | Where | Returns | Cost |\n| --- | --- | --- | --- |\n| **VALUES zip** | ES\\|QL in ES | full span geometry: start, end, `duration_ms`, `data` | pack rows into `VALUES()`, `MV_ZIP` twice, expand. Last ES-direct success: A **1000** flaps, B **2000** docs / 200 flaps |\n| **TOP zip** | ES\\|QL in ES | **span starts only** (no duration / end) | `TOP(@timestamp, 10000, \"asc\", \u2026)`, one expand. Cheaper; last ES-direct success: A **2000**, B **4000** / 400 |\n| **TOP zip + Kibana duration** (`top_zip_kibana_duration`) | Kibana HTTP probe | TOP zip starts, then Kibana attaches `duration_ms` / `status_ended_at` | Kibana reduce <10 ms; still dies at 10k on ES (`esql_block_factory`). Last HTTP success: **5k / 500** |\n| **search_after** | Query DSL PIT + Kibana RLE | full spans | page events (2000), run-length-encode in Kibana. Cheap through **10k events / 1k flaps** (~102 ms) |\n| **ES\\|QL + Kibana RLE** (`esql`) | one-shot ES\\|QL `KEEP`/`SORT`/`LIMIT 10000` + Kibana RLE | full spans | one ES\\|QL round-trip, same reducer as search_after. Assumes episode < 10k events |\n\nSeries like `A / top_zip` = Pattern A data + TOP zip query. `A / values_zip` = same A data, VALUES zip query.\n\n**Why A looks slower on TOP zip:** same `docs`, more span rows (every event is a transition). search_after tracks **docs**, not flaps, so A vs B at the same window is about the same.\n",
+        "settings": {
+          "open_links_in_new_tab": true
+        }
+      },
+      "id": "legend-patterns-methods",
+      "type": "markdown"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 20,
+        "w": 12,
+        "h": 6
+      },
+      "config": {
+        "type": "metric",
+        "title": "Last search_after ok (docs)",
+        "sampling": 1,
+        "ignore_global_filters": true,
+        "data_source": {
+          "type": "esql",
+          "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"search_after\" AND succeeded == true | STATS max_docs = MAX(docs)"
+        },
+        "styling": {
+          "density": "default",
+          "primary": {
+            "position": "bottom",
+            "labels": {
+              "alignment": "left"
+            },
+            "value": {
+              "alignment": "right",
+              "sizing": "auto"
+            }
+          }
+        },
+        "metrics": [
+          {
+            "column": "max_docs",
+            "type": "primary",
+            "color": {
+              "type": "auto"
+            }
+          }
+        ]
+      },
+      "id": "metric-sa-docs",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 12,
+        "y": 20,
+        "w": 12,
+        "h": 6
+      },
+      "config": {
+        "type": "metric",
+        "title": "Last TOP zip HTTP ok (docs)",
+        "sampling": 1,
+        "ignore_global_filters": true,
+        "data_source": {
+          "type": "esql",
+          "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"top_zip_kibana_duration\" AND succeeded == true | STATS max_docs = MAX(docs)"
+        },
+        "styling": {
+          "density": "default",
+          "primary": {
+            "position": "bottom",
+            "labels": {
+              "alignment": "left"
+            },
+            "value": {
+              "alignment": "right",
+              "sizing": "auto"
+            }
+          }
+        },
+        "metrics": [
+          {
+            "column": "max_docs",
+            "type": "primary",
+            "color": {
+              "type": "auto"
+            }
+          }
+        ]
+      },
+      "id": "metric-topzip-docs",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 24,
+        "y": 20,
+        "w": 12,
+        "h": 6
+      },
+      "config": {
+        "type": "metric",
+        "title": "Last VALUES zip ok (docs)",
+        "sampling": 1,
+        "ignore_global_filters": true,
+        "data_source": {
+          "type": "esql",
+          "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"es_direct\" AND method == \"values_zip\" AND succeeded == true | STATS max_docs = MAX(docs)"
+        },
+        "styling": {
+          "density": "default",
+          "primary": {
+            "position": "bottom",
+            "labels": {
+              "alignment": "left"
+            },
+            "value": {
+              "alignment": "right",
+              "sizing": "auto"
+            }
+          }
+        },
+        "metrics": [
+          {
+            "column": "max_docs",
+            "type": "primary",
+            "color": {
+              "type": "auto"
+            }
+          }
+        ]
+      },
+      "id": "metric-values-docs",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 36,
+        "y": 20,
+        "w": 12,
+        "h": 6
+      },
+      "config": {
+        "type": "metric",
+        "title": "Bench rows",
+        "sampling": 1,
+        "ignore_global_filters": true,
+        "data_source": {
+          "type": "esql",
+          "query": "FROM span-query-perf | WHERE test_id == ?test_id | STATS rows = COUNT(*)"
+        },
+        "styling": {
+          "density": "default",
+          "primary": {
+            "position": "bottom",
+            "labels": {
+              "alignment": "left"
+            },
+            "value": {
+              "alignment": "right",
+              "sizing": "auto"
+            }
+          }
+        },
+        "metrics": [
+          {
+            "column": "rows",
+            "type": "primary",
+            "color": {
+              "type": "auto"
+            }
+          }
+        ]
+      },
+      "id": "metric-rows",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 26,
+        "w": 48,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "HTTP latency vs docs",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "total_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND succeeded == true AND total_ms IS NOT NULL | EVAL series = CONCAT(pattern, \" / \", method) | KEEP test_id, docs, series, total_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "series",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "total_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-http-latency",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 40,
+        "w": 48,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "ES-direct wall vs docs",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "wall_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"es_direct\" AND succeeded == true AND wall_ms IS NOT NULL | EVAL series = CONCAT(pattern, \" / \", method) | KEEP test_id, docs, series, wall_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "series",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "wall_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-es-direct",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 54,
+        "w": 24,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "A vs B: TOP zip + Kibana duration",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "total_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"top_zip_kibana_duration\" AND succeeded == true AND total_ms IS NOT NULL | KEEP test_id, docs, pattern, total_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "pattern",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "total_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-topzip-ab",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 24,
+        "y": 54,
+        "w": 24,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "A vs B: search_after",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "total_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"search_after\" AND succeeded == true AND total_ms IS NOT NULL | KEEP test_id, docs, pattern, total_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "pattern",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "total_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-searchafter-ab",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 68,
+        "w": 48,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "A vs B: ES|QL + Kibana duration",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "total_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"esql\" AND succeeded == true AND total_ms IS NOT NULL | KEEP test_id, docs, pattern, total_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "pattern",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "total_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-esql-ab",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 82,
+        "w": 48,
+        "h": 14
+      },
+      "config": {
+        "type": "xy",
+        "title": "A vs B: VALUES zip (duration in ES)",
+        "legend": {
+          "visibility": "visible",
+          "placement": "outside",
+          "layout": {
+            "type": "grid",
+            "truncate": {
+              "max_lines": 1
+            }
+          },
+          "position": "bottom"
+        },
+        "axis": {
+          "x": {
+            "title": {
+              "text": "docs",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "ordinal",
+            "domain": {
+              "type": "fit",
+              "rounding": false
+            }
+          },
+          "y": {
+            "title": {
+              "text": "total_ms",
+              "visible": true
+            },
+            "ticks": {
+              "visible": true
+            },
+            "grid": {
+              "visible": true
+            },
+            "labels": {
+              "orientation": "horizontal"
+            },
+            "scale": "linear",
+            "domain": {
+              "type": "full",
+              "rounding": true
+            }
+          }
+        },
+        "styling": {
+          "overlays": {
+            "partial_buckets": {
+              "visible": false
+            },
+            "current_time_marker": {
+              "visible": false
+            }
+          },
+          "interpolation": "linear",
+          "points": {
+            "visibility": "visible"
+          }
+        },
+        "layers": [
+          {
+            "sampling": 1,
+            "ignore_global_filters": true,
+            "data_source": {
+              "type": "esql",
+              "query": "FROM span-query-perf | WHERE test_id == ?test_id AND layer == \"http\" AND method == \"values_zip\" AND succeeded == true AND total_ms IS NOT NULL | KEEP test_id, docs, pattern, total_ms | SORT docs"
+            },
+            "type": "line",
+            "breakdown_by": {
+              "column": "pattern",
+              "color": {
+                "mode": "categorical",
+                "palette": "default",
+                "mapping": []
+              }
+            },
+            "y": [
+              {
+                "column": "total_ms",
+                "axis": "y",
+                "color": {
+                  "type": "auto"
+                }
+              }
+            ],
+            "x": {
+              "column": "docs"
+            }
+          }
+        ]
+      },
+      "id": "xy-valueszip-ab",
+      "type": "vis"
+    },
+    {
+      "grid": {
+        "x": 0,
+        "y": 96,
+        "w": 48,
+        "h": 16
+      },
+      "config": {
+        "type": "data_table",
+        "title": "All bench rows",
+        "sampling": 1,
+        "ignore_global_filters": true,
+        "data_source": {
+          "type": "esql",
+          "query": "FROM span-query-perf | WHERE test_id == ?test_id | KEEP test_id, layer, pattern, method, docs, flaps, spans, events, pages, total_ms, wall_ms, kibana_ms, es_took_ms, result, window | SORT layer, pattern, method, docs"
+        },
+        "metrics": [
+          {
+            "column": "flaps",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "spans",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "events",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "pages",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "total_ms",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "wall_ms",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "kibana_ms",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          },
+          {
+            "column": "es_took_ms",
+            "visible": true,
+            "color": {
+              "type": "auto"
+            },
+            "alignment": "right"
+          }
+        ],
+        "rows": [
+          {
+            "column": "test_id",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          },
+          {
+            "column": "layer",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          },
+          {
+            "column": "pattern",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          },
+          {
+            "column": "method",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          },
+          {
+            "column": "docs",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          },
+          {
+            "column": "result",
+            "visible": true,
+            "alignment": "left",
+            "color": {
+              "type": "auto"
+            },
+            "click_filter": false
+          }
+        ]
+      },
+      "id": "table-all",
+      "type": "vis"
+    }
+  ],
+  "pinned_panels": [
+    {
+      "id": "control-test-id",
+      "width": "medium",
+      "grow": true,
+      "config": {
+        "title": "test_id",
+        "selected_options": [
+          "2026-08-30-esql"
+        ],
+        "single_select": true,
+        "variable_name": "test_id",
+        "variable_type": "values",
+        "control_type": "VALUES_FROM_QUERY",
+        "esql_query": "FROM span-query-perf | WHERE test_id IS NOT NULL | STATS BY test_id"
+      },
+      "type": "esql_control"
+    }
+  ]
+}
