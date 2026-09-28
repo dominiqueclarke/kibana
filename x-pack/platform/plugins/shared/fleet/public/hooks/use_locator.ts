@@ -6,6 +6,7 @@
  */
 import type { SerializableRecord } from '@kbn/utility-types';
 import type { ValuesType } from 'utility-types';
+import type { LocatorHost } from '@kbn/rule-data-utils';
 
 import { LOCATORS_IDS } from '../constants';
 
@@ -27,5 +28,7 @@ export function useDiscoverLocator() {
 }
 
 export function useAlertingV2RuleLibraryLocator() {
-  return useLocator<{ templateId?: string }>(LOCATORS_IDS.ALERTING_V2_RULE_LIBRARY);
+  return useLocator<{ templateId?: string; host?: LocatorHost }>(
+    LOCATORS_IDS.ALERTING_V2_RULE_LIBRARY
+  );
 }

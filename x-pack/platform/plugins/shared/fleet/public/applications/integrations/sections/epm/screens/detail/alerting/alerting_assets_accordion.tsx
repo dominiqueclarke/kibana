@@ -6,16 +6,34 @@
  */
 
 import React, { useState } from 'react';
-import { EuiBadge, EuiSpacer, EuiTab, EuiTabs } from '@elastic/eui';
+import {
+  EuiBadge,
+  EuiButton,
+  EuiFlexGroup,
+  EuiFlexItem,
+  EuiSpacer,
+  EuiTab,
+  EuiTabs,
+} from '@elastic/eui';
 import { i18n } from '@kbn/i18n';
 import { FormattedMessage } from '@kbn/i18n-react';
 import { isAlertingV2Enabled } from '@kbn/alerting-v2-utils';
+import {
+  OBSERVABILITY_ALERTING_APP_ID,
+  OBSERVABILITY_ALERTING_BASE_PATH,
+} from '@kbn/deeplinks-observability';
 
 import { useAlertingV2RuleLibraryLocator, useStartServices } from '../../../../../hooks';
 import { KibanaAssetType } from '../../../../../types';
 import { AssetsAccordion, type DisplayedAssetType } from '../assets/assets_accordion';
 
 import type { AlertingAsset, AlertingEngine } from './types';
+
+const OBSERVABILITY_RULE_LIBRARY_HOST = {
+  app: OBSERVABILITY_ALERTING_APP_ID,
+  pathPrefix: '/rule-library',
+  appBasePath: OBSERVABILITY_ALERTING_BASE_PATH,
+};
 
 const isV2AlertingAsset = (asset: Pick<AlertingAsset, 'attributes'>): boolean =>
   asset.attributes?.engine === 'v2';
@@ -123,8 +141,10 @@ const useAlertingEngineAssets = (savedObjects: AlertingAsset[], type: DisplayedA
   const startServices = useStartServices();
   const isAlertingRuleTemplate = type === KibanaAssetType.alertingRuleTemplate;
   const hasV2Templates = savedObjects.some(isV2AlertingAsset);
+  const hasV1Templates = savedObjects.some((asset) => !isV2AlertingAsset(asset));
   const alertingV2Enabled = isAlertingV2Enabled(startServices);
-  const showEngineUi = isAlertingRuleTemplate && hasV2Templates && alertingV2Enabled;
+  const showEngineUi =
+    isAlertingRuleTemplate && hasV2Templates && hasV1Templates && alertingV2Enabled;
   const [selectedEngineTab, setSelectedEngineTab] = useState<AlertingEngine>(
     hasV2Templates ? 'v2' : 'v1'
   );
@@ -167,10 +187,29 @@ export const AlertingAssetsAccordion: React.FunctionComponent<{
       header={
         showEngineUi ? (
           <>
-            <AlertingEngineTabs
-              selectedEngineTab={selectedEngineTab}
-              onSelect={setSelectedEngineTab}
-            />
+            <EuiFlexGroup justifyContent="spaceBetween" alignItems="center">
+              <EuiFlexItem grow={false}>
+                <AlertingEngineTabs
+                  selectedEngineTab={selectedEngineTab}
+                  onSelect={setSelectedEngineTab}
+                />
+              </EuiFlexItem>
+              <EuiFlexItem grow={false}>
+                <EuiButton
+                  data-test-subj="fleetAlertingRuleLibraryButton"
+                  href={ruleLibraryLocator?.getRedirectUrl({
+                    host: OBSERVABILITY_RULE_LIBRARY_HOST,
+                  })}
+                  iconSide="right"
+                  size="s"
+                >
+                  <FormattedMessage
+                    id="xpack.fleet.epm.assets.navigateToRuleLibraryButton"
+                    defaultMessage="Navigate to observability rule library"
+                  />
+                </EuiButton>
+              </EuiFlexItem>
+            </EuiFlexGroup>
             <EuiSpacer size="m" />
           </>
         ) : undefined
@@ -180,10 +219,13 @@ export const AlertingAssetsAccordion: React.FunctionComponent<{
           ? (asset) => <AlertingEngineBadge engine={asset.attributes?.engine} />
           : undefined
       }
-      getTitleHref={(asset) =>
-        getAlertingAssetTitleHref(asset, type, (params) =>
-          ruleLibraryLocator?.getRedirectUrl(params)
-        )
+      getTitleHref={
+        showEngineUi
+          ? () => undefined
+          : (asset) =>
+              getAlertingAssetTitleHref(asset, type, (params) =>
+                ruleLibraryLocator?.getRedirectUrl(params)
+              )
       }
     />
   );
