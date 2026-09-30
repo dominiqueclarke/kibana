@@ -18,8 +18,12 @@ const mockExperimentalFeaturesGet = jest.fn();
 const mockUseAlertingAssets = jest.fn();
 const mockIsAlertingV2Enabled = jest.fn();
 const mockGetRuleLibraryRedirectUrl = jest.fn(
-  ({ templateId }: { templateId?: string }) =>
-    `/app/r?l=ALERTING_V2_RULE_LIBRARY_LOCATOR&templateId=${templateId}`
+  ({ templateId, host }: { templateId?: string; host?: { app: string; pathPrefix: string } }) => {
+    const app = host?.app ?? 'management';
+    const path = host?.pathPrefix ?? '/alerting_v2/rule_library';
+    const query = templateId ? `?templateId=${templateId}` : '';
+    return `/app/r?l=ALERTING_V2_RULE_LIBRARY_LOCATOR&v=${app}${path}${query}`;
+  }
 );
 
 jest.mock('../../../../../services', () => ({
@@ -187,14 +191,19 @@ describe('AlertingPage', () => {
     expect(screen.getByTestId('fleetAlertingEngineTab-v2')).toHaveTextContent('ES|QL Rules');
     expect(screen.getByTestId('fleetAlertingEngineTab-v1')).toHaveTextContent('Standard Rules');
     expect(screen.getByText('[System] Metrics template')).toBeInTheDocument();
-    expect(screen.getByRole('link', { name: '[System] Metrics template' })).toHaveAttribute(
-      'href',
-      '/mock/app/r?l=ALERTING_V2_RULE_LIBRARY_LOCATOR&templateId=template-2'
-    );
-    expect(mockGetRuleLibraryRedirectUrl).toHaveBeenCalledWith({ templateId: 'template-2' });
+    expect(screen.queryByRole('link', { name: '[System] Metrics template' })).not.toBeInTheDocument();
     expect(screen.queryByText('[System] Logs template')).not.toBeInTheDocument();
     expect(screen.getByTestId('fleetAssetsAccordion.engineBadge.v2')).toHaveTextContent('ES|QL');
     expect(screen.queryByTestId('fleetAssetsAccordion.engineBadge.v1')).not.toBeInTheDocument();
+    expect(mockGetRuleLibraryRedirectUrl).toHaveBeenCalledWith(
+      expect.objectContaining({
+        host: expect.objectContaining({
+          app: 'observabilityAlerting',
+          pathPrefix: '/rule-library',
+        }),
+      })
+    );
+    expect(screen.getByTestId('fleetAlertingRuleLibraryButton')).toHaveAttribute('href');
   });
 
   it('should show v1 templates on the Kibana Standard Rules tab', async () => {
@@ -207,10 +216,8 @@ describe('AlertingPage', () => {
 
     fireEvent.click(screen.getByTestId('fleetAlertingEngineTab-v1'));
 
-    expect(screen.getByRole('link', { name: '[System] Logs template' })).toHaveAttribute(
-      'href',
-      '/mock/app/management/insightsAndAlerting/triggersActions/create/template/template-1'
-    );
+    expect(screen.getByText('[System] Logs template')).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '[System] Logs template' })).not.toBeInTheDocument();
     expect(screen.queryByText('[System] Metrics template')).not.toBeInTheDocument();
     expect(screen.getByTestId('fleetAssetsAccordion.engineBadge.v1')).toHaveTextContent('Standard');
     expect(screen.queryByTestId('fleetAssetsAccordion.engineBadge.v2')).not.toBeInTheDocument();
